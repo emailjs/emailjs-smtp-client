@@ -9,6 +9,12 @@ SMTP Client allows you to connect to and stream data to a SMTP server from Firef
 
 ## Usage
 
+### Volo
+
+Install with [volo](http://volojs.org/):
+
+    volo add Kreata/smtpclient/v0.1.0
+
 ### AMD
 
 Require [smtpclient.js](smtpclient.js) as `smtpclient`
