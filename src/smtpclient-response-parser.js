@@ -15,33 +15,37 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-// AMD shim
 (function(root, factory) {
+    'use strict';
+
     if (typeof define === 'function' && define.amd) {
         define(factory);
     } else {
-        root.smtpResponseParser = factory();
+        root.SmtpClientResponseParser = factory();
     }
 }(this, function() {
-
-    "use strict";
+    'use strict';
 
     /**
      * Generates a parser object for data coming from a SMTP server
      *
      * @constructor
      */
-    var SmtpResponseParser = function(){
+    var SmtpResponseParser = function() {
 
         /**
          * If the complete line is not received yet, contains the beginning of it
          */
-        this._remainder = "";
+        this._remainder = '';
 
         /**
          * If the response is a list, contains previous not yet emitted lines
          */
-        this._block = {data: [], lines: [], statusCode: null};
+        this._block = {
+            data: [],
+            lines: [],
+            statusCode: null
+        };
 
         /**
          * If set to true, do not accept any more input
@@ -54,9 +58,9 @@
     /**
      * NB! Errors do not block, the parsing and data emitting continues despite of the errors
      */
-    SmtpResponseParser.prototype.onerror = function(error){};
-    SmtpResponseParser.prototype.ondata = function(data){};
-    SmtpResponseParser.prototype.onend = function(){};
+    SmtpResponseParser.prototype.onerror = function() {};
+    SmtpResponseParser.prototype.ondata = function() {};
+    SmtpResponseParser.prototype.onend = function() {};
 
     // Public API
 
@@ -65,16 +69,16 @@
      *
      * @param {String} chunk Chunk of data received from the server
      */
-    SmtpResponseParser.prototype.send = function(chunk){
-        if(this.destroyed){
-            return this.onerror(new Error("This parser has already been closed, 'write' is prohibited"));
+    SmtpResponseParser.prototype.send = function(chunk) {
+        if (this.destroyed) {
+            return this.onerror(new Error('This parser has already been closed, "write" is prohibited'));
         }
 
         // Lines should always end with <CR><LF> but you never know, might be only <LF> as well
-        var lines = (this._remainder + (chunk || "")).split(/\r?\n/);
+        var lines = (this._remainder + (chunk || '')).split(/\r?\n/);
         this._remainder = lines.pop(); // not sure if the line has completely arrived yet
 
-        for(var i=0, len = lines.length; i<len; i++){
+        for (var i = 0, len = lines.length; i < len; i++) {
             this._processLine(lines[i]);
         }
     };
@@ -84,16 +88,16 @@
      *
      * @param {String} [chunk] Chunk of data received from the server
      */
-    SmtpResponseParser.prototype.end = function(chunk){
-        if(this.destroyed){
-            return this.onerror(new Error("This parser has already been closed, 'end' is prohibited"));
+    SmtpResponseParser.prototype.end = function(chunk) {
+        if (this.destroyed) {
+            return this.onerror(new Error('This parser has already been closed, "end" is prohibited'));
         }
 
-        if(chunk){
+        if (chunk) {
             this.send(chunk);
         }
 
-        if(this._remainder){
+        if (this._remainder) {
             this._processLine(this._remainder);
         }
 
@@ -109,7 +113,7 @@
      *
      * @param {String} line Complete line of data from the server
      */
-    SmtpResponseParser.prototype._processLine = function(line){
+    SmtpResponseParser.prototype._processLine = function(line) {
         var match, response;
 
         // possible input strings for the regex:
@@ -117,53 +121,58 @@
         // 250 MESSAGE
         // 250 1.2.3 MESSAGE
 
-        if(!line.trim()){
+        if (!line.trim()) {
             // nothing to check, empty line
             return;
         }
 
         this._block.lines.push(line);
 
-        if((match = line.match(/^(\d{3})([\- ])(?:(\d+\.\d+\.\d+)(?: ))?(.*)/))){
+        if ((match = line.match(/^(\d{3})([\- ])(?:(\d+\.\d+\.\d+)(?: ))?(.*)/))) {
 
             this._block.data.push(match[4]);
 
-            if(match[2] == "-"){
-                if(this._block.statusCode && this._block.statusCode != Number(match[1])){
-                    this.onerror("Invalid status code " + match[1] +
-                        " for multi line response (" + this._block.statusCode + " expected)");
-                }else if(!this._block.statusCode){
+            if (match[2] === '-') {
+                if (this._block.statusCode && this._block.statusCode !== Number(match[1])) {
+                    this.onerror('Invalid status code ' + match[1] +
+                        ' for multi line response (' + this._block.statusCode + ' expected)');
+                } else if (!this._block.statusCode) {
                     this._block.statusCode = Number(match[1]);
                 }
                 return;
-            }else{
+            } else {
                 response = {
                     statusCode: Number(match[1]) || 0,
                     enhancedStatus: match[3] || null,
-                    data: this._block.data.join("\n"),
-                    line: this._block.lines.join("\n")
+                    data: this._block.data.join('\n'),
+                    line: this._block.lines.join('\n')
                 };
                 response.success = response.statusCode >= 200 && response.statusCode < 300;
 
                 this.ondata(response);
-                this._block = {data: [], lines: [], statusCode: null};
+                this._block = {
+                    data: [],
+                    lines: [],
+                    statusCode: null
+                };
                 this._block.statusCode = null;
             }
-        }else{
-            this.onerror(new Error("Invalid SMTP response \"" + line + "\""));
+        } else {
+            this.onerror(new Error('Invalid SMTP response "' + line + '"'));
             this.ondata({
                 success: false,
                 statusCode: this._block.statusCode || null,
                 enhancedStatus: null,
-                data: [line].join("\n"),
-                line: this._block.lines.join("\n")
+                data: [line].join('\n'),
+                line: this._block.lines.join('\n')
             });
-            this._block = {data: [], lines: [], statusCode: null};
+            this._block = {
+                data: [],
+                lines: [],
+                statusCode: null
+            };
         }
     };
 
-    return function(){
-        return new SmtpResponseParser();
-    };
-
+    return SmtpResponseParser;
 }));

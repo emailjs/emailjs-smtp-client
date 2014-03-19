@@ -1,6 +1,24 @@
 # SMTP Client
 
-SMTP Client allows you to connect to and stream data to a SMTP server from FirefoxOS
+SMTP Client allows you to connect to and stream data to a SMTP server in the browser.
+
+[![Build Status](https://travis-ci.org/whiteout-io/smtpclient.png?branch=master)](https://travis-ci.org/whiteout-io/smtpclient)
+
+## StringEncoding API
+
+This module requires `TextEncoder` and `TextDecoder` to exist as part of the StringEncoding API (see: [MDN](https://developer.mozilla.org/en-US/docs/WebAPI/Encoding_API) [whatwg.org](http://encoding.spec.whatwg.org/#api)). Firefox 19+ is basically the only browser that supports this at the time of writing, while [Chromium in canary, not stable](https://code.google.com/p/chromium/issues/detail?id=243354). Luckily, [there is a polyfill](https://github.com/whiteout-io/stringencoding)!
+
+Depending on your browser, you might need [this polyfill for ArrayBuffer #slice](https://github.com/ttaubert/node-arraybuffer-slice), e.g. phantomjs.
+
+## Installation
+
+### [Bower](http://bower.io/):
+
+    bower install git@github.com:whiteout-io/smtpclient.git#0.1.1
+
+### [npm](https://www.npmjs.org/):
+
+    npm install https://github.com/whiteout-io/smtpclient/tarball/0.1.1
 
 ## Quirks
 
@@ -9,42 +27,20 @@ SMTP Client allows you to connect to and stream data to a SMTP server from Firef
 
 ## Usage
 
-### Volo
-
-Install with [volo](http://volojs.org/):
-
-    volo add Kreata/smtpclient/v0.1.0
-
 ### AMD
 
-Require [smtpclient.js](smtpclient.js) as `smtpclient`
+Require [smtpclient.js](src/smtpclient.js) as `smtpclient`
 
 ### Global context
 
-Include files [smtpResponseParser.js](smtpResponseParser.js) and [smtpclient.js](smtpclient.js) on the page.
+Include files [smtpclient-response-parser.js](src/smtpclient-response-parser.js) and [smtpclient.js](src/smtpclient.js) on the page.
 
 ```html
-<script src="smtpResponseParser.js"></script>
+<script src="smtpclient-response-parser.js"></script>
 <script src="smtpclient.js"></script>
 ```
 
 This exposes global variable `smtpclient`
-
-### Ensure privileges
-
-Opening TCP sockets to a SMTP server requires special privileges. You need to set the type of your application to "privileged" and add "tcp-socket" to the permissions list in the application manifest.
-
-```
-{
-    "type" : "privileged",
-    "permissions": {
-        "tcp-socket": {
-            "description" : "SMTP access"
-        }
-    },
-    ...
-}
-```
 
 ## API
 
@@ -177,10 +173,32 @@ Once you have done sending messages and do not want to keep the connection open,
 
 If you run `quit` or `close` in the `ondone` event, then the next `onidle` is never called.
 
-## Tests
+## Get your hands dirty
 
-Unit tests for firemail reside in the [example app](https://github.com/Kreata/firemail-example).
+    git clone git@github.com:whiteout-io/smtpclient.git
+    cd smtpclient
+    npm install && npm test
+
+To run the integration tests against a local smtp server
+
+    grunt smtp
+    add the test folder as a chrome app (chrome settings -> extensions -> check 'developer mode' -> load unpacked extension)
 
 ## License
 
-**MIT**
+    Copyright (c) 2013 Andris Reinman
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.

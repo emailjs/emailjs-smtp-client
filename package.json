@@ -1,5 +1,40 @@
 {
-  "version": "0.1.0",
-  "main": "smtpclient",
+  "name": "smtpclient",
+  "version": "0.1.1",
+  "homepage": "https://github.com/whiteout-io/smtpclient",
+  "description": "SMTP Client allows you to connect to and stream data to a SMTP server in the browser.",
+  "author": "Andris Reinman <andris@kreata.ee>",
+  "keywords": [
+    "SMTP"
+  ],
+  "license": "MIT",
+  "scripts": {
+    "pretest": "cd node_modules/node-forge/ && npm install && npm run minify && cd ../..",
+    "test": "grunt"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/whiteout-io/smtpclient.git"
+  },
+  "main": "src/smtpclient",
+  "dependencies": {},
+  "devDependencies": {
+    "chai": "~1.8.1",
+    "grunt": "~0.4.1",
+    "grunt-mocha-phantomjs": "~0.4.0",
+    "grunt-contrib-connect": "~0.6.0",
+    "grunt-contrib-jshint": "~0.8.0",
+    "grunt-contrib-copy": "^0.5.0",
+    "grunt-contrib-clean": "^0.5.0",
+    "grunt-contrib-watch": "^0.6.1",
+    "mocha": "~1.16.2",
+    "phantomjs": "~1.9.7-1",
+    "requirejs": "~2.1.10",
+    "tcp-socket": "https://github.com/whiteout-io/tcp-socket/tarball/0.1.1",
+    "stringencoding": "https://github.com/whiteout-io/stringencoding/tarball/0.1.0",
+    "node-forge": "^0.2.33",
+    "simplesmtp": "^0.3.23",
+    "sinon": "^1.9.0"
+  },
   "volo": {}
 }
