@@ -40,14 +40,14 @@ Include files [smtpclient-response-parser.js](src/smtpclient-response-parser.js)
 <script src="smtpclient.js"></script>
 ```
 
-This exposes global variable `smtpclient`
+This exposes global variable `SmtpClient`
 
 ## API
 
-Create `smtpclient` object with:
+Create `SmtpClient` object with:
 
 ```javascript
-var client = smtpclient(host, port, options)
+var client = new SmtpClient(host, port, options)
 ```
 
 where
