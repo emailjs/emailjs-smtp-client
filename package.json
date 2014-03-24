@@ -30,8 +30,8 @@
     "mocha": "~1.16.2",
     "phantomjs": "~1.9.7-1",
     "requirejs": "~2.1.10",
-    "tcp-socket": "https://github.com/whiteout-io/tcp-socket/tarball/0.1.1",
-    "stringencoding": "https://github.com/whiteout-io/stringencoding/tarball/0.1.0",
+    "tcp-socket": "https://github.com/whiteout-io/tcp-socket/tarball/v0.1.1",
+    "stringencoding": "https://github.com/whiteout-io/stringencoding/tarball/v0.1.0",
     "node-forge": "^0.2.33",
     "simplesmtp": "^0.3.23",
     "sinon": "^1.9.0"
