@@ -22,11 +22,17 @@
     'use strict';
 
     if (typeof define === 'function' && define.amd) {
-        define(['./smtpclient-response-parser'], factory);
+        define(['tcp-socket', 'stringencoding', './smtpclient-response-parser'], function(TCPSocket, encoding, SmtpClientResponseParser) {
+            return factory(TCPSocket, encoding.TextEncoder, encoding.TextDecoder, SmtpClientResponseParser);
+        });
+    } else if (typeof exports === 'object') {
+        var encoding = require('stringencoding');
+        module.exports = factory(require('tcp-socket'), encoding.TextEncoder, encoding.TextDecoder, require('./smtpclient-response-parser'));
     } else {
-        root.SmtpClient = factory(root.SmtpClientResponseParser);
+        navigator.TCPSocket = navigator.TCPSocket || navigator.mozTCPSocket;
+        root.SmtpClient = factory(navigator.TCPSocket, root.TextEncoder, root.TextDecoder, root.SmtpClientResponseParser);
     }
-}(this, function(SmtpClientResponseParser) {
+}(this, function(TCPSocket, TextEncoder, TextDecoder, SmtpClientResponseParser) {
     'use strict';
 
     /**
@@ -49,6 +55,7 @@
      * @param {Number} [options.logLength=6] How many messages between the client and the server to log. Set to false to disable logging
      */
     function SmtpClient(host, port, options) {
+        this._TCPSocket = TCPSocket;
 
         this.options = options || {};
 
@@ -213,7 +220,7 @@
      * Initiate a connection to the server
      */
     SmtpClient.prototype.connect = function() {
-        this.socket = navigator.TCPSocket.open(this.host, this.port, {
+        this.socket = this._TCPSocket.open(this.host, this.port, {
             /*
                 I wanted to use "string" at first but realized that if a
                 STARTTLS would have to be implemented not in the socket level

@@ -44,11 +44,10 @@ module.exports = function(grunt) {
                 src: [
                     'arraybuffer-slice/index.js',
                     'tcp-socket/src/tcp-socket.js',
-                    'stringencoding/encoding-indexes.js',
-                    'stringencoding/encoding.js',
+                    'stringencoding/dist/stringencoding.min.js',
                     'mocha/mocha.js',
                     'mocha/mocha.css',
-                    'node-forge/js/forge.min.js',
+                    'tcp-socket/node_modules/node-forge/js/forge.min.js',
                     'chai/chai.js',
                     'sinon/pkg/sinon.js',
                     'requirejs/require.js',
@@ -75,7 +74,7 @@ module.exports = function(grunt) {
                 dest: 'test/lib/'
             }
         },
-        clean: ['test/lib/**/*']
+        clean: ['test/lib/**/*', 'test/smptclient.js', 'test/smptclient-repsonse-parser.js']
     });
 
     // Load the plugin(s)

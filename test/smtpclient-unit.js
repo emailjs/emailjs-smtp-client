@@ -9,12 +9,8 @@ define(['chai', 'sinon', 'smtpclient'], function(chai, sinon, SmtpClient) {
         var host, port, options;
         var TCPSocket;
 
-        TCPSocket = navigator.TCPSocket = function() {};
-        TCPSocket.open = function() {};
-        TCPSocket.prototype.close = function() {};
-        TCPSocket.prototype.send = function() {};
-
         beforeEach(function() {
+
             host = '127.0.0.1',
             port = 10000,
             options = {
@@ -32,6 +28,11 @@ define(['chai', 'sinon', 'smtpclient'], function(chai, sinon, SmtpClient) {
             var openStub, socketStub;
 
             beforeEach(function() {
+                TCPSocket = smtp._TCPSocket = function() {};
+                TCPSocket.open = function() {};
+                TCPSocket.prototype.close = function() {};
+                TCPSocket.prototype.send = function() {};
+
                 socketStub = sinon.createStubInstance(TCPSocket);
                 openStub = sinon.stub(TCPSocket, 'open');
             });
