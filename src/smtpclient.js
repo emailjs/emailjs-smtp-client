@@ -23,16 +23,18 @@
 
     if (typeof define === 'function' && define.amd) {
         define(['tcp-socket', 'stringencoding', './smtpclient-response-parser'], function(TCPSocket, encoding, SmtpClientResponseParser) {
-            return factory(TCPSocket, encoding.TextEncoder, encoding.TextDecoder, SmtpClientResponseParser);
+            return factory(TCPSocket, encoding.TextEncoder, encoding.TextDecoder, SmtpClientResponseParser, window.btoa);
         });
     } else if (typeof exports === 'object') {
         var encoding = require('stringencoding');
-        module.exports = factory(require('tcp-socket'), encoding.TextEncoder, encoding.TextDecoder, require('./smtpclient-response-parser'));
+        module.exports = factory(require('tcp-socket'), encoding.TextEncoder, encoding.TextDecoder, require('./smtpclient-response-parser'), function(str) {
+            return new Buffer(str).toString("base64");
+        });
     } else {
         navigator.TCPSocket = navigator.TCPSocket || navigator.mozTCPSocket;
-        root.SmtpClient = factory(navigator.TCPSocket, root.TextEncoder, root.TextDecoder, root.SmtpClientResponseParser);
+        root.SmtpClient = factory(navigator.TCPSocket, root.TextEncoder, root.TextDecoder, root.SmtpClientResponseParser, window.btoa);
     }
-}(this, function(TCPSocket, TextEncoder, TextDecoder, SmtpClientResponseParser) {
+}(this, function(TCPSocket, TextEncoder, TextDecoder, SmtpClientResponseParser, btoa) {
     'use strict';
 
     /**
@@ -489,7 +491,7 @@
         // escape dots
         if (!this.options.disableEscaping) {
             chunk = chunk.replace(/\n\./g, '\n..');
-            if (this._lastDataBytes.substr(-1) === '\n' && chunk.charAt(0) === '.') {
+            if ((this._lastDataBytes.substr(-1) === '\n' || !this._lastDataBytes) && chunk.charAt(0) === '.') {
                 chunk = '.' + chunk;
             }
         }

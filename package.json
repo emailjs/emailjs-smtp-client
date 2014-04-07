@@ -1,6 +1,6 @@
 {
   "name": "smtpclient",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "homepage": "https://github.com/whiteout-io/smtpclient",
   "description": "SMTP Client allows you to connect to and stream data to a SMTP server in the browser.",
   "author": "Andris Reinman <andris@kreata.ee>",
@@ -33,7 +33,8 @@
     "mocha": "~1.16.2",
     "requirejs": "~2.1.10",
     "simplesmtp": "^0.3.23",
-    "sinon": "^1.9.0"
+    "sinon": "^1.9.0",
+    "amdefine": "^0.1.0"
   },
   "volo": {}
 }

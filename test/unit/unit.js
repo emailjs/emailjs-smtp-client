@@ -1,7 +1,7 @@
 'use strict';
 
 require.config({
-    baseUrl: 'lib',
+    baseUrl: '../lib',
     paths: {
         'test': '..',
         'forge': 'forge.min',
@@ -39,6 +39,6 @@ if (!Function.prototype.bind) {
 
 
 mocha.setup('bdd');
-require(['test/smtpclient-unit'], function() {
+require(['../unit/smtpclient-test', '../unit/smtpclient-response-parser-test'], function() {
     (window.mochaPhantomJS || window.mocha).run();
 });
