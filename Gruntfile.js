@@ -4,7 +4,7 @@ module.exports = function(grunt) {
     // Project configuration.
     grunt.initConfig({
         jshint: {
-            all: ['*.js', 'src/*.js', 'test/unit/*.js', 'test/integration/*.js'],
+            all: ['*.js', 'src/*.js', 'test/unit/*.js', 'test/integration/*.js', 'test/chrome/*.js'],
             options: {
                 jshintrc: '.jshintrc'
             }
@@ -17,6 +17,15 @@ module.exports = function(grunt) {
                     base: '.',
                     keepalive: true
                 }
+            }
+        },
+
+        mochaTest: {
+            test: {
+                options: {
+                    reporter: 'spec'
+                },
+                src: ['test/integration/*.js']
             }
         },
 
@@ -74,7 +83,7 @@ module.exports = function(grunt) {
                 dest: 'test/lib/'
             }
         },
-        clean: ['test/lib/**/*', 'test/smptclient.js', 'test/smptclient-repsonse-parser.js']
+        clean: ['test/lib/**/*']
     });
 
     // Load the plugin(s)
@@ -84,6 +93,7 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-contrib-watch');
     grunt.loadNpmTasks('grunt-contrib-copy');
     grunt.loadNpmTasks('grunt-contrib-clean');
+    grunt.loadNpmTasks('grunt-mocha-test');
 
     // Tasks
     grunt.registerTask('simplesmtp', function() {
@@ -103,12 +113,12 @@ module.exports = function(grunt) {
         grunt.log.writeln('> Starting SMTP server on port ' + options.port);
 
         var server = simplesmtp.createServer(options);
-        server.on('startData', function(/*connection*/){});
-        server.on('data', function(/*connection, chunk*/){});
-        server.on('dataReady', function(connection, callback){
+        server.on('startData', function( /*connection*/ ) {});
+        server.on('data', function( /*connection, chunk*/ ) {});
+        server.on('dataReady', function(connection, callback) {
             callback(null, 'foo');
         });
-        server.on('authorizeUser', function(connection, username, password, callback){
+        server.on('authorizeUser', function(connection, username, password, callback) {
             callback(null, username === 'abc' && password === 'def');
         });
         server.listen(options.port, function(err) {
@@ -124,5 +134,6 @@ module.exports = function(grunt) {
     grunt.registerTask('smtp', ['deps', 'simplesmtp']);
     grunt.registerTask('dev', ['jshint', 'deps', 'connect']);
     grunt.registerTask('deps', ['clean', 'copy']);
-    grunt.registerTask('default', ['jshint', 'deps', 'mocha_phantomjs']);
+    grunt.registerTask('test', ['jshint', 'mocha_phantomjs', 'mochaTest']);
+    grunt.registerTask('default', ['deps', 'test']);
 };

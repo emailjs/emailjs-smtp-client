@@ -14,7 +14,7 @@ require.config({
 });
 
 mocha.setup('bdd');
-require(['../integration/smtpclient-test'], function() {
+require(['../chrome/smtpclient-test'], function() {
     'use strict';
 
     window.mocha.run();
