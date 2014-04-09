@@ -22,11 +22,19 @@
     'use strict';
 
     if (typeof define === 'function' && define.amd) {
-        define(['./smtpclient-response-parser'], factory);
+        define(['tcp-socket', 'stringencoding', './smtpclient-response-parser'], function(TCPSocket, encoding, SmtpClientResponseParser) {
+            return factory(TCPSocket, encoding.TextEncoder, encoding.TextDecoder, SmtpClientResponseParser, window.btoa);
+        });
+    } else if (typeof exports === 'object') {
+        var encoding = require('stringencoding');
+        module.exports = factory(require('tcp-socket'), encoding.TextEncoder, encoding.TextDecoder, require('./smtpclient-response-parser'), function(str) {
+            return new Buffer(str).toString("base64");
+        });
     } else {
-        root.SmtpClient = factory(root.SmtpClientResponseParser);
+        navigator.TCPSocket = navigator.TCPSocket || navigator.mozTCPSocket;
+        root.SmtpClient = factory(navigator.TCPSocket, root.TextEncoder, root.TextDecoder, root.SmtpClientResponseParser, window.btoa);
     }
-}(this, function(SmtpClientResponseParser) {
+}(this, function(TCPSocket, TextEncoder, TextDecoder, SmtpClientResponseParser, btoa) {
     'use strict';
 
     /**
@@ -49,6 +57,7 @@
      * @param {Number} [options.logLength=6] How many messages between the client and the server to log. Set to false to disable logging
      */
     function SmtpClient(host, port, options) {
+        this._TCPSocket = TCPSocket;
 
         this.options = options || {};
 
@@ -213,7 +222,7 @@
      * Initiate a connection to the server
      */
     SmtpClient.prototype.connect = function() {
-        this.socket = navigator.TCPSocket.open(this.host, this.port, {
+        this.socket = this._TCPSocket.open(this.host, this.port, {
             /*
                 I wanted to use "string" at first but realized that if a
                 STARTTLS would have to be implemented not in the socket level
@@ -482,7 +491,7 @@
         // escape dots
         if (!this.options.disableEscaping) {
             chunk = chunk.replace(/\n\./g, '\n..');
-            if (this._lastDataBytes.substr(-1) === '\n' && chunk.charAt(0) === '.') {
+            if ((this._lastDataBytes.substr(-1) === '\n' || !this._lastDataBytes) && chunk.charAt(0) === '.') {
                 chunk = '.' + chunk;
             }
         }
