@@ -7,15 +7,16 @@ if (typeof define !== 'function') {
 define(function(require) {
 
     var SmtpClient = require('../../src/smtpclient'),
+        simplesmtp = require('simplesmtp'),
         chai = require('chai'),
         expect = chai.expect;
 
     describe('smtpclient node integration tests', function() {
-        var smtp, port = 10001;
+        var smtp, port = 10001,
+            server;
 
         before(function(done) {
             // start smtp test server
-            var simplesmtp = require('simplesmtp');
             var options = {
                 debug: false,
                 disableDNSValidation: true,
@@ -24,7 +25,7 @@ define(function(require) {
                 secureConnection: false
             };
 
-            var server = simplesmtp.createServer(options);
+            server = simplesmtp.createServer(options);
             server.on('startData', function( /*connection*/ ) {});
             server.on('data', function( /*connection, chunk*/ ) {});
             server.on('dataReady', function(connection, callback) {
@@ -36,8 +37,12 @@ define(function(require) {
             server.listen(options.port, done);
         });
 
+        after(function(done) {
+            // close smtp test server
+            server.end(done);
+        });
+
         beforeEach(function(done) {
-            // smtp = new SmtpClient('127.0.0.1', 10000);
             smtp = new SmtpClient('127.0.0.1', port, {
                 useSSL: false
             });
@@ -161,8 +166,39 @@ define(function(require) {
     });
 
     describe('smtpclient authentication tests', function() {
+        var port = 10001,
+            server;
+
+        before(function(done) {
+            // start smtp test server
+            var options = {
+                debug: false,
+                disableDNSValidation: true,
+                port: port,
+                enableAuthentication: true,
+                secureConnection: false,
+                ignoreTLS: true
+            };
+
+            server = simplesmtp.createServer(options);
+            server.on('startData', function( /*connection*/ ) {});
+            server.on('data', function( /*connection, chunk*/ ) {});
+            server.on('dataReady', function(connection, callback) {
+                callback(null, 'foo');
+            });
+            server.on('authorizeUser', function(connection, username, password, callback) {
+                callback(null, username === 'abc' && password === 'def');
+            });
+            server.listen(options.port, done);
+        });
+
+        after(function(done) {
+            // close smtp test server
+            server.end(done);
+        });
+
         it('should authenticate with default method', function(done) {
-            var smtp = new SmtpClient('127.0.0.1', 10000, {
+            var smtp = new SmtpClient('127.0.0.1', port, {
                 useSSL: false,
                 auth: {
                     user: 'abc',
@@ -179,7 +215,7 @@ define(function(require) {
         });
 
         it('should authenticate with AUTH LOGIN', function(done) {
-            var smtp = new SmtpClient('127.0.0.1', 10000, {
+            var smtp = new SmtpClient('127.0.0.1', port, {
                 useSSL: false,
                 auth: {
                     user: 'abc',
@@ -197,7 +233,7 @@ define(function(require) {
         });
 
         it('should fail with invalid credentials', function(done) {
-            var smtp = new SmtpClient('127.0.0.1', 10000, {
+            var smtp = new SmtpClient('127.0.0.1', port, {
                 useSSL: false,
                 auth: {
                     user: 'abcd',
