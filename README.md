@@ -23,7 +23,7 @@ Depending on your browser, you might need [this polyfill for ArrayBuffer #slice]
 ## Quirks
 
   * `STARTTLS` is currently not supported
-  * Only `PLAIN` and `USER` authentication mechanisms are supported
+  * Only `PLAIN`, `USER` and `XOAUTH2` authentication mechanisms are supported. `XOAUTH2` expects a ready to use access token, no tokens are generated automatically.
 
 ## Usage
 
@@ -63,9 +63,25 @@ The following connection options can be used with `simplesmtp.connect`:
   * **useSSL** *Boolean* Set to true, to use encrypted connection
   * **name** *String* Client hostname for introducing itself to the server
   * **auth** *Object* Authentication options. Depends on the preferred authentication method. Usually `{user, pass}`
-  * **authMethod** *String* Force specific authentication method (eg. `"PLAIN"` for using `AUTH PLAIN`)
+  * **authMethod** *String* Force specific authentication method (eg. `"PLAIN"` for using `AUTH PLAIN` or `"XOAUTH2"` for `AUTH XOAUTH2`)
   * **disableEscaping** *Boolean* If set to true, do not escape dots on the beginning of the lines
   * **logLength** *Number* How many messages between the client and the server to log. Set to false to disable logging. Defaults to 6
+
+### XOAUTH2
+
+To authenticate using XOAUTH2, use the following authentication config
+
+```javascript
+var config = {
+    authMethod: 'XOAUTH2',
+    auth: {
+      user: 'username',
+      token: 'access_token'
+  }
+};
+```
+
+See [XOAUTH2 docs](https://developers.google.com/gmail/xoauth2_protocol#smtp_protocol_exchange) for more info.
 
 ## Connection events
 

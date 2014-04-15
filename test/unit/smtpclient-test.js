@@ -406,6 +406,23 @@ define(function(require) {
 
                 _sendCommandStub.restore();
             });
+
+            it('should use AUTH XOAUTH2 if specified', function() {
+                var _sendCommandStub = sinon.stub(smtp, '_sendCommand');
+
+                smtp.options.auth = {
+                    user: 'abc',
+                    token: 'def'
+                };
+                smtp._supportedAuth = ['XOAUTH2'];
+                smtp.options.authMethod = 'XOAUTH2';
+                smtp._authenticateUser();
+
+                expect(_sendCommandStub.withArgs('AUTH XOAUTH2 dXNlcj1hYmMBYXV0aD1CZWFyZXIgZGVmAQE=').callCount).to.equal(1);
+                expect(smtp._currentAction).to.equal(smtp._actionAUTH_XOAUTH2);
+
+                _sendCommandStub.restore();
+            });
         });
 
         describe('#_actionGreeting', function() {
@@ -546,6 +563,34 @@ define(function(require) {
                 expect(smtp._currentAction).to.equal(smtp._actionAUTHComplete);
 
                 _sendCommandStub.restore();
+            });
+        });
+
+        describe('#_actionAUTH_XOAUTH2', function() {
+            it('should send empty response on error', function() {
+                var _sendCommandStub = sinon.stub(smtp, '_sendCommand');
+
+                smtp._actionAUTH_XOAUTH2({
+                    success: false
+                });
+
+                expect(_sendCommandStub.withArgs('').callCount).to.equal(1);
+                expect(smtp._currentAction).to.equal(smtp._actionAUTHComplete);
+
+                _sendCommandStub.restore();
+            });
+
+            it('should run _actionAUTHComplete on success', function() {
+                var _actionAUTHCompleteStub = sinon.stub(smtp, '_actionAUTHComplete');
+
+                var cmd = {
+                    success: true
+                };
+                smtp._actionAUTH_XOAUTH2(cmd);
+
+                expect(_actionAUTHCompleteStub.withArgs(cmd).callCount).to.equal(1);
+
+                _actionAUTHCompleteStub.restore();
             });
         });
 
@@ -798,6 +843,12 @@ define(function(require) {
                 expect(_onidleStub.callCount).to.equal(0);
 
                 _onidleStub.restore();
+            });
+        });
+
+        describe('#_buildXOAuth2Token', function() {
+            it('should return base64 encoded XOAUTH2 token', function() {
+                expect(smtp._buildXOAuth2Token('user@host', 'abcde')).to.equal('dXNlcj11c2VyQGhvc3QBYXV0aD1CZWFyZXIgYWJjZGUBAQ==');
             });
         });
     });

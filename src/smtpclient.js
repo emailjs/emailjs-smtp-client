@@ -165,9 +165,9 @@
         this._secureMode = !! this.options.useSSL;
     }
 
-    // 
+    //
     // EVENTS
-    // 
+    //
 
     // Event functions should be overriden, these are just placeholders
 
@@ -212,9 +212,9 @@
      */
     SmtpClient.prototype.ondone = function() {};
 
-    // 
+    //
     // PUBLIC METHODS
-    // 
+    //
 
     // Connection related methods
 
@@ -447,7 +447,9 @@
      * @param {Object} command Parsed data
      */
     SmtpClient.prototype._onCommand = function(command) {
-        this._currentAction.call(this, command);
+        if(typeof this._currentAction === 'function'){
+            this._currentAction.call(this, command);
+        }
     };
 
     /**
@@ -564,6 +566,11 @@
                         this.options.auth.user + '\u0000' +
                         this.options.auth.pass))));
                 return;
+            case 'XOAUTH2':
+                // See https://developers.google.com/gmail/xoauth2_protocol#smtp_protocol_exchange
+                this._currentAction = this._actionAUTH_XOAUTH2;
+                this._sendCommand('AUTH XOAUTH2 ' + this._buildXOAuth2Token(this.options.auth.user, this.options.auth.token));
+                return;
         }
 
         this._onError(new Error('Unknown authentication method ' + auth));
@@ -609,6 +616,11 @@
         // Detect if the server supports LOGIN auth
         if (command.line.match(/AUTH(?:\s+[^\n]*\s+|\s+)LOGIN/i)) {
             this._supportedAuth.push('LOGIN');
+        }
+
+        // Detect if the server supports XOAUTH2 auth
+        if (command.line.match(/AUTH(?:\s+[^\n]*\s+|\s+)XOAUTH2/i)) {
+            this._supportedAuth.push('XOAUTH2');
         }
 
         // Detect maximum allowed message size
@@ -658,6 +670,20 @@
         }
         this._currentAction = this._actionAUTHComplete;
         this._sendCommand(btoa(unescape(encodeURIComponent(this.options.auth.pass))));
+    };
+
+    /**
+     * Response to AUTH XOAUTH2 token, if error occurs send empty response
+     *
+     * @param {Object} command Parsed command from the server {statusCode, data, line}
+     */
+    SmtpClient.prototype._actionAUTH_XOAUTH2 = function(command) {
+        if (!command.success) {
+            this._sendCommand('');
+            this._currentAction = this._actionAUTHComplete;
+        } else {
+            this._currentAction = this._actionAUTHComplete(command);
+        }
     };
 
     /**
@@ -798,6 +824,24 @@
             // Waiting for new connections
             this.onidle();
         }
+    };
+
+    /**
+     * Builds a login token for XOAUTH2 authentication command
+     *
+     * @param {String} user E-mail address of the user
+     * @param {String} token Valid access token for the user
+     * @return {String} Base64 formatted login token
+     */
+    SmtpClient.prototype._buildXOAuth2Token = function(user, token) {
+        var authData = [
+            'user=' + (user || ''),
+            'auth=Bearer ' + token,
+            '',
+            ''
+        ];
+        // base64("user={User}\x00auth=Bearer {Token}\x00\x00")
+        return btoa(unescape(encodeURIComponent(authData.join('\x01'))));
     };
 
     return SmtpClient;
