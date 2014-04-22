@@ -686,7 +686,7 @@
             this._sendCommand('');
             this._currentAction = this._actionAUTHComplete;
         } else {
-            this._currentAction = this._actionAUTHComplete(command);
+            this._actionAUTHComplete(command);
         }
     };
 
