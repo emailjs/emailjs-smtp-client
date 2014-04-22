@@ -1,7 +1,7 @@
 {
     "name": "smtpclient",
     "main": "src/smtpclient.js",
-    "version": "0.1.1",
+    "version": "0.3.0",
     "homepage": "https://github.com/whiteout-io/smtpclient",
     "authors": [
         "Andris Reinman <andris@kreata.ee>"
