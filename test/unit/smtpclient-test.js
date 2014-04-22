@@ -412,10 +412,9 @@ define(function(require) {
 
                 smtp.options.auth = {
                     user: 'abc',
-                    token: 'def'
+                    xoauth2: 'def'
                 };
                 smtp._supportedAuth = ['XOAUTH2'];
-                smtp.options.authMethod = 'XOAUTH2';
                 smtp._authenticateUser();
 
                 expect(_sendCommandStub.withArgs('AUTH XOAUTH2 dXNlcj1hYmMBYXV0aD1CZWFyZXIgZGVmAQE=').callCount).to.equal(1);

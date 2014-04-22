@@ -62,7 +62,10 @@ The following connection options can be used with `simplesmtp.connect`:
 
   * **useSSL** *Boolean* Set to true, to use encrypted connection
   * **name** *String* Client hostname for introducing itself to the server
-  * **auth** *Object* Authentication options. Depends on the preferred authentication method. Usually `{user, pass}`
+  * **auth** *Object* Authentication options. Depends on the preferred authentication method
+    * **user** is the username for the user (also applies to OAuth2)
+    * **pass** is the password for the user if plain auth is used
+    * **xoauth2** is the OAuth2 access token to be used instead of password. If both password and xoauth2 token are set, the token is preferred.
   * **authMethod** *String* Force specific authentication method (eg. `"PLAIN"` for using `AUTH PLAIN` or `"XOAUTH2"` for `AUTH XOAUTH2`)
   * **disableEscaping** *Boolean* If set to true, do not escape dots on the beginning of the lines
   * **logLength** *Number* How many messages between the client and the server to log. Set to false to disable logging. Defaults to 6
@@ -73,10 +76,9 @@ To authenticate using XOAUTH2, use the following authentication config
 
 ```javascript
 var config = {
-    authMethod: 'XOAUTH2',
     auth: {
       user: 'username',
-      token: 'access_token'
+      xoauth2: 'access_token'
   }
 };
 ```
