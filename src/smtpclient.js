@@ -447,7 +447,7 @@
      * @param {Object} command Parsed data
      */
     SmtpClient.prototype._onCommand = function(command) {
-        if(typeof this._currentAction === 'function'){
+        if (typeof this._currentAction === 'function') {
             this._currentAction.call(this, command);
         }
     };
@@ -537,6 +537,10 @@
 
         var auth;
 
+        if (!this.options.authMethod && this.options.auth.xoauth2) {
+            this.options.authMethod = 'XOAUTH2';
+        }
+
         if (this.options.authMethod) {
             auth = this.options.authMethod.toUpperCase().trim();
         } else {
@@ -569,7 +573,7 @@
             case 'XOAUTH2':
                 // See https://developers.google.com/gmail/xoauth2_protocol#smtp_protocol_exchange
                 this._currentAction = this._actionAUTH_XOAUTH2;
-                this._sendCommand('AUTH XOAUTH2 ' + this._buildXOAuth2Token(this.options.auth.user, this.options.auth.token));
+                this._sendCommand('AUTH XOAUTH2 ' + this._buildXOAuth2Token(this.options.auth.user, this.options.auth.xoauth2));
                 return;
         }
 
