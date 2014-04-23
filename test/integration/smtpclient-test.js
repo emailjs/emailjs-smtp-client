@@ -177,7 +177,8 @@ define(function(require) {
                 port: port,
                 enableAuthentication: true,
                 secureConnection: false,
-                ignoreTLS: true
+                ignoreTLS: true,
+                authMethods: ["PLAIN", "LOGIN", "XOAUTH2"]
             };
 
             server = simplesmtp.createServer(options);
@@ -240,6 +241,57 @@ define(function(require) {
                     pass: 'defe'
                 },
                 authMethod: 'LOGIN'
+            });
+            expect(smtp).to.exist;
+
+            smtp.connect();
+            smtp.onerror = function() {
+                smtp.onclose = done;
+            };
+        });
+
+        it('should authenticate with AUTH XOAUTH2 and send a message', function(done) {
+            var smtp = new SmtpClient('127.0.0.1', port, {
+                useSSL: false,
+                auth: {
+                    user: 'abc',
+                    xoauth2: 'def'
+                }
+            });
+            expect(smtp).to.exist;
+
+            smtp.connect();
+            smtp.onidle = function() {
+                smtp.onidle = function() {
+                    smtp.onclose = done;
+                    smtp.quit();
+                };
+
+                smtp.onready = function(failedRecipients) {
+                    expect(failedRecipients).to.be.empty;
+
+                    smtp.send('Subject: test\r\n\r\nMessage body');
+                    smtp.end();
+                };
+
+                smtp.ondone = function(success) {
+                    expect(success).to.be.true;
+                };
+
+                smtp.useEnvelope({
+                    from: 'sender@localhost',
+                    to: ['receiver@localhost']
+                });
+            };
+        });
+
+        it('should fail with AUTH XOAUTH2', function(done) {
+            var smtp = new SmtpClient('127.0.0.1', port, {
+                useSSL: false,
+                auth: {
+                    user: 'abc',
+                    xoauth2: 'ghi'
+                }
             });
             expect(smtp).to.exist;
 
