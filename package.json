@@ -33,7 +33,7 @@
     "grunt-mocha-test": "~0.10.0",
     "mocha": "~1.16.2",
     "requirejs": "~2.1.10",
-    "simplesmtp": "^0.3.23",
+    "simplesmtp": "^0.3.27",
     "sinon": "^1.9.0",
     "amdefine": "^0.1.0"
   },
