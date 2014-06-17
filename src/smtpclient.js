@@ -22,20 +22,22 @@
     'use strict';
 
     if (typeof define === 'function' && define.amd) {
-        define(['tcp-socket', 'stringencoding', './smtpclient-response-parser'], function(TCPSocket, encoding, SmtpClientResponseParser) {
-            return factory(TCPSocket, encoding.TextEncoder, encoding.TextDecoder, SmtpClientResponseParser, window.btoa);
+        define(['tcp-socket', 'stringencoding', 'axe', './smtpclient-response-parser'], function(TCPSocket, encoding, axe, SmtpClientResponseParser) {
+            return factory(TCPSocket, encoding.TextEncoder, encoding.TextDecoder, axe, SmtpClientResponseParser, window.btoa);
         });
     } else if (typeof exports === 'object') {
         var encoding = require('stringencoding');
-        module.exports = factory(require('tcp-socket'), encoding.TextEncoder, encoding.TextDecoder, require('./smtpclient-response-parser'), function(str) {
+        module.exports = factory(require('tcp-socket'), encoding.TextEncoder, encoding.TextDecoder, require('axe'), require('./smtpclient-response-parser'), function(str) {
             return new Buffer(str).toString("base64");
         });
     } else {
         navigator.TCPSocket = navigator.TCPSocket || navigator.mozTCPSocket;
-        root.SmtpClient = factory(navigator.TCPSocket, root.TextEncoder, root.TextDecoder, root.SmtpClientResponseParser, window.btoa);
+        root.SmtpClient = factory(navigator.TCPSocket, root.TextEncoder, root.TextDecoder, root.axe, root.SmtpClientResponseParser, window.btoa);
     }
-}(this, function(TCPSocket, TextEncoder, TextDecoder, SmtpClientResponseParser, btoa) {
+}(this, function(TCPSocket, TextEncoder, TextDecoder, axe, SmtpClientResponseParser, btoa) {
     'use strict';
+
+    var DEBUG_TAG = 'SMTP Client';
 
     /**
      * Creates a connection object to a SMTP server and allows to send mail through it.
@@ -54,7 +56,6 @@
      * @param {Object} [options.auth] Authentication options. Depends on the preferred authentication method. Usually {user, pass}
      * @param {String} [options.authMethod] Force specific authentication method
      * @param {Boolean} [options.disableEscaping] If set to true, do not escape dots on the beginning of the lines
-     * @param {Number} [options.logLength=6] How many messages between the client and the server to log. Set to false to disable logging
      */
     function SmtpClient(host, port, options) {
         this._TCPSocket = TCPSocket;
@@ -69,7 +70,7 @@
          * (recommended if applicable). If useSSL is not set but the port used is 465,
          * then ecryption is used by default.
          */
-        this.options.useSSL = 'useSSL' in this.options ? !! this.options.useSSL : this.port === 465;
+        this.options.useSSL = 'useSSL' in this.options ? !!this.options.useSSL : this.port === 465;
 
         /**
          * Authentication object. If not set, authentication step will be skipped.
@@ -93,12 +94,6 @@
         this.destroyed = false;
 
         /**
-         * Array of last messages sent and received
-         *
-         */
-        this.log = [];
-
-        /**
          * Informational value that indicates the maximum size (in bytes) for
          * a message sent to the current server. Detected from SIZE info.
          * Not available until connection has been established.
@@ -112,12 +107,6 @@
         this.waitDrain = false;
 
         // Private properties
-
-        /**
-         * Array of last messages sent and received. Defaults to 6
-         *
-         */
-        this._logLength = 'logLength' in this.options ? (this.options.logLength || 0) : 5;
 
         /**
          * SMTP response parser object. All data coming from the downstream server
@@ -162,7 +151,7 @@
          * If STARTTLS support lands in TCPSocket, _secureMode can be set to
          * true, once the connection is upgraded
          */
-        this._secureMode = !! this.options.useSSL;
+        this._secureMode = !!this.options.useSSL;
     }
 
     //
@@ -173,8 +162,7 @@
 
     /**
      * Will be run when an error occurs. Connection to the server will be closed automatically,
-     * so wait for an `onclose` event as well. See `log` array for the messages sent and
-     * received before yielding in the error.
+     * so wait for an `onclose` event as well.
      *
      * @param {Error} err Error object
      */
@@ -205,7 +193,7 @@
     SmtpClient.prototype.onready = function() {};
 
     /**
-     * The mail has been sent. See `log.slice(-1)` for the exact response message.
+     * The mail has been sent.
      * Wait for `onidle` next.
      *
      * @param {Boolean} success Indicates if the message was queued by the server or not
@@ -470,17 +458,7 @@
      * @param {Boolean} binary If set to true, do not log the entire message but only the length of it in bytes
      */
     SmtpClient.prototype._log = function(sender, data, binary) {
-        if (this._logLength) {
-            this.log.push({
-                sender: sender,
-                data: !binary ? data || '' : '<' +
-                    (new TextEncoder('utf-8').encode(data || '').length) +
-                    ' bytes of data>'
-            });
-            if (this.log.length > this._logLength) {
-                this.log = this.log.slice(-this._logLength);
-            }
-        }
+        axe.debug(DEBUG_TAG, sender + ': ' + !binary ? data || '' : '<' + (new TextEncoder('utf-8').encode(data || '').length) +' bytes of data>');
     };
 
     /**

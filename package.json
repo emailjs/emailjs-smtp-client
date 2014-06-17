@@ -1,6 +1,6 @@
 {
   "name": "smtpclient",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "homepage": "https://github.com/whiteout-io/smtpclient",
   "description": "SMTP Client allows you to connect to and stream data to a SMTP server in the browser.",
   "author": "Andris Reinman <andris@kreata.ee>",
@@ -19,7 +19,8 @@
   "main": "src/smtpclient",
   "dependencies": {
     "tcp-socket": "~0.2.1",
-    "stringencoding": "https://github.com/whiteout-io/stringencoding/tarball/v0.1.0"
+    "stringencoding": "https://github.com/whiteout-io/stringencoding/tarball/v0.1.0",
+    "axe": "https://github.com/whiteout-io/axe/tarball/v0.0.2"
   },
   "devDependencies": {
     "chai": "~1.8.1",
@@ -36,6 +37,5 @@
     "simplesmtp": "^0.3.27",
     "sinon": "^1.9.0",
     "amdefine": "^0.1.0"
-  },
-  "volo": {}
+  }
 }

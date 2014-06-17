@@ -9,6 +9,7 @@ define(function(require) {
     var SmtpClient = require('../../src/smtpclient'),
         simplesmtp = require('simplesmtp'),
         chai = require('chai'),
+        axe = require('axe'),
         expect = chai.expect;
 
     describe('smtpclient node integration tests', function() {
@@ -16,6 +17,8 @@ define(function(require) {
             server;
 
         before(function(done) {
+            axe.removeAppender(axe.defaultAppender);
+
             // start smtp test server
             var options = {
                 debug: false,
