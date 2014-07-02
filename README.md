@@ -12,13 +12,9 @@ Depending on your browser, you might need [this polyfill for ArrayBuffer #slice]
 
 ## Installation
 
-### [Bower](http://bower.io/):
-
-    bower install git@github.com:whiteout-io/smtpclient.git#v0.1.1
-
 ### [npm](https://www.npmjs.org/):
 
-    npm install https://github.com/whiteout-io/smtpclient/tarball/v0.1.1
+    npm install https://github.com/whiteout-io/smtpclient/tarball/<TAG_NAME>
 
 ## Quirks
 

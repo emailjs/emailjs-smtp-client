@@ -8,6 +8,7 @@ define(function(require) {
 
     var chai = require('chai');
     var sinon = require('sinon');
+    var axe = require('axe');
     var SmtpClient = require('../../src/smtpclient');
 
     var expect = chai.expect;
@@ -20,7 +21,8 @@ define(function(require) {
         var TCPSocket;
 
         beforeEach(function() {
-
+            axe.removeAppender(axe.defaultAppender);
+            
             host = '127.0.0.1',
             port = 10000,
             options = {
@@ -282,73 +284,6 @@ define(function(require) {
                 expect(_oncloseStub.callCount).to.equal(1);
 
                 _oncloseStub.restore();
-            });
-        });
-
-        describe('#_log', function() {
-            it('should do nothing if logLengt is not set', function() {
-                smtp.log = [];
-                smtp._logLength = 0;
-                smtp._log('a', 'b', false);
-
-                expect(smtp.log.length).to.equal(0);
-            });
-
-            it('should push data to a log array', function() {
-                smtp.log = [];
-                smtp._logLength = 10;
-                smtp._log('a', 'b', false);
-
-                expect(smtp.log.length).to.equal(1);
-            });
-
-            it('should not exceed length limit', function() {
-                smtp.log = [];
-                smtp._logLength = 3;
-                smtp._log('a', 'b', false);
-                smtp._log('a', 'b', false);
-                smtp._log('a', 'b', false);
-                smtp._log('a', 'b', false);
-
-                expect(smtp.log.length).to.equal(3);
-            });
-        });
-
-        describe('#_log', function() {
-            it('should pass data to socket unmodified', function() {
-                smtp.options.disableEscaping = true;
-                smtp._sendString('.a\r\n.b\r');
-                smtp._sendString('\n.c\r\n');
-                smtp._sendString('.d');
-
-                expect(socketStub.send.callCount).to.equal(3);
-                expect(socketStub.send.args[0][0]).to.deep.equal(
-                    new Uint8Array([ /* .a\r\n.b\r */ 46, 97, 13, 10, 46, 98, 13]).buffer);
-                expect(socketStub.send.args[1][0]).to.deep.equal(
-                    new Uint8Array([ /* \n.c\r\n */ 10, 46, 99, 13, 10]).buffer);
-                expect(socketStub.send.args[2][0]).to.deep.equal(
-                    new Uint8Array([ /* .d */ 46, 100]).buffer);
-            });
-
-            it('should escape dots', function() {
-                smtp.options.disableEscaping = false;
-
-                smtp._sendString('.a\r\n.b\r');
-                expect(smtp._lastDataBytes).to.equal('b\r');
-
-                smtp._sendString('\n.c\r\n');
-                expect(smtp._lastDataBytes).to.equal('\r\n');
-
-                smtp._sendString('.d');
-                expect(smtp._lastDataBytes).to.equal('.d');
-
-                expect(socketStub.send.callCount).to.equal(3);
-                expect(socketStub.send.args[0][0]).to.deep.equal(
-                    new Uint8Array([ /* ..a\r\n..b\r */ 46, 46, 97, 13, 10, 46, 46, 98, 13]).buffer);
-                expect(socketStub.send.args[1][0]).to.deep.equal(
-                    new Uint8Array([ /* \n..c\r\n */ 10, 46, 46, 99, 13, 10]).buffer);
-                expect(socketStub.send.args[2][0]).to.deep.equal(
-                    new Uint8Array([ /* ..d */ 46, 46, 100]).buffer);
             });
         });
 

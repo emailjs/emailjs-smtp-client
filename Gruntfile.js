@@ -63,6 +63,7 @@ module.exports = function(grunt) {
                     'mimefuncs/src/mimefuncs.js',
                     'mimetypes/src/mimetypes.js',
                     'punycode/punycode.min.js',
+                    'axe/axe.js'
                 ],
                 dest: 'test/lib/',
                 rename: function(dest, src) {
