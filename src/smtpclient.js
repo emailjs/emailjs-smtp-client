@@ -221,6 +221,7 @@
             ca: this.options.ca
         });
 
+        this.socket.oncert = this.oncert;
         this.socket.onerror = this._onError.bind(this);
         this.socket.onopen = this._onOpen.bind(this);
     };
