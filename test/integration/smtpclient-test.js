@@ -47,7 +47,7 @@ define(function(require) {
 
         beforeEach(function(done) {
             smtp = new SmtpClient('127.0.0.1', port, {
-                useSSL: false
+                useSecureTransport: false
             });
             expect(smtp).to.exist;
 
@@ -203,7 +203,7 @@ define(function(require) {
 
         it('should authenticate with default method', function(done) {
             var smtp = new SmtpClient('127.0.0.1', port, {
-                useSSL: false,
+                useSecureTransport: false,
                 auth: {
                     user: 'abc',
                     pass: 'def'
@@ -220,7 +220,7 @@ define(function(require) {
 
         it('should authenticate with AUTH LOGIN', function(done) {
             var smtp = new SmtpClient('127.0.0.1', port, {
-                useSSL: false,
+                useSecureTransport: false,
                 auth: {
                     user: 'abc',
                     pass: 'def'
@@ -238,7 +238,7 @@ define(function(require) {
 
         it('should fail with invalid credentials', function(done) {
             var smtp = new SmtpClient('127.0.0.1', port, {
-                useSSL: false,
+                useSecureTransport: false,
                 auth: {
                     user: 'abcd',
                     pass: 'defe'
@@ -255,7 +255,7 @@ define(function(require) {
 
         it('should authenticate with AUTH XOAUTH2 and send a message', function(done) {
             var smtp = new SmtpClient('127.0.0.1', port, {
-                useSSL: false,
+                useSecureTransport: false,
                 auth: {
                     user: 'abc',
                     xoauth2: 'def'
@@ -290,7 +290,7 @@ define(function(require) {
 
         it('should fail with AUTH XOAUTH2', function(done) {
             var smtp = new SmtpClient('127.0.0.1', port, {
-                useSSL: false,
+                useSecureTransport: false,
                 auth: {
                     user: 'abc',
                     xoauth2: 'ghi'

@@ -26,7 +26,7 @@ define(function(require) {
             host = '127.0.0.1',
             port = 10000,
             options = {
-                useSSL: true,
+                useSecureTransport: true,
                 ca: 'WOW. SUCH CERT. MUCH TLS.'
             };
 
