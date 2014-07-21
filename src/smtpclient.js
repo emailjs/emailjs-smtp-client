@@ -51,7 +51,7 @@
      * @param {String} [host="localhost"] Hostname to conenct to
      * @param {Number} [port=25] Port number to connect to
      * @param {Object} [options] Optional options object
-     * @param {Boolean} [options.useSSL] Set to true, to use encrypted connection
+     * @param {Boolean} [options.useSecureTransport] Set to true, to use encrypted connection
      * @param {String} [options.name] Client hostname for introducing itself to the server
      * @param {Object} [options.auth] Authentication options. Depends on the preferred authentication method. Usually {user, pass}
      * @param {String} [options.authMethod] Force specific authentication method
@@ -62,15 +62,15 @@
 
         this.options = options || {};
 
-        this.port = port || (this.options.useSSL ? 465 : 25);
+        this.port = port || (this.options.useSecureTransport ? 465 : 25);
         this.host = host || 'localhost';
 
         /**
          * If set to true, start an encrypted connection instead of the plaintext one
-         * (recommended if applicable). If useSSL is not set but the port used is 465,
+         * (recommended if applicable). If useSecureTransport is not set but the port used is 465,
          * then ecryption is used by default.
          */
-        this.options.useSSL = 'useSSL' in this.options ? !!this.options.useSSL : this.port === 465;
+        this.options.useSecureTransport = 'useSecureTransport' in this.options ? !!this.options.useSecureTransport : this.port === 465;
 
         /**
          * Authentication object. If not set, authentication step will be skipped.
@@ -151,7 +151,7 @@
          * If STARTTLS support lands in TCPSocket, _secureMode can be set to
          * true, once the connection is upgraded
          */
-        this._secureMode = !!this.options.useSSL;
+        this._secureMode = !!this.options.useSecureTransport;
     }
 
     //
@@ -217,7 +217,7 @@
                 in the future, then the stream must be binary
             */
             binaryType: 'arraybuffer',
-            useSSL: this._secureMode,
+            useSecureTransport: this._secureMode,
             ca: this.options.ca
         });
 
