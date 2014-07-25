@@ -53,7 +53,7 @@ module.exports = function(grunt) {
                 src: [
                     'arraybuffer-slice/index.js',
                     'tcp-socket/src/tcp-socket.js',
-                    'stringencoding/dist/stringencoding.min.js',
+                    'wo-stringencoding/dist/stringencoding.min.js',
                     'mocha/mocha.js',
                     'mocha/mocha.css',
                     'tcp-socket/node_modules/node-forge/js/forge.min.js',
@@ -61,9 +61,8 @@ module.exports = function(grunt) {
                     'sinon/pkg/sinon.js',
                     'requirejs/require.js',
                     'mimefuncs/src/mimefuncs.js',
-                    'mimetypes/src/mimetypes.js',
                     'punycode/punycode.min.js',
-                    'axe/axe.js'
+                    'axe-logger/axe.js'
                 ],
                 dest: 'test/lib/',
                 rename: function(dest, src) {

@@ -5,7 +5,8 @@ require.config({
     paths: {
         'test': '..',
         'forge': 'forge.min',
-        'stringencoding': 'stringencoding.min'
+        'wo-stringencoding': 'stringencoding.min',
+        'axe-logger': 'axe'
     },
     shim: {
         sinon: {

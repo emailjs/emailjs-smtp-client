@@ -14,7 +14,7 @@ Depending on your browser, you might need [this polyfill for ArrayBuffer #slice]
 
 ### [npm](https://www.npmjs.org/):
 
-    npm install https://github.com/whiteout-io/smtpclient/tarball/<TAG_NAME>
+    npm install --save wo-smtpclient
 
 ## Quirks
 

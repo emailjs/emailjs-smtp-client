@@ -9,7 +9,7 @@ define(function(require) {
     var SmtpClient = require('../../src/smtpclient'),
         simplesmtp = require('simplesmtp'),
         chai = require('chai'),
-        axe = require('axe'),
+        axe = require('axe-logger'),
         expect = chai.expect;
 
     describe('smtpclient node integration tests', function() {

@@ -8,7 +8,7 @@ define(function(require) {
 
     var chai = require('chai');
     var sinon = require('sinon');
-    var axe = require('axe');
+    var axe = require('axe-logger');
     var SmtpClient = require('../../src/smtpclient');
 
     var expect = chai.expect;

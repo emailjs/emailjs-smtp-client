@@ -22,12 +22,12 @@
     'use strict';
 
     if (typeof define === 'function' && define.amd) {
-        define(['tcp-socket', 'stringencoding', 'axe', './smtpclient-response-parser'], function(TCPSocket, encoding, axe, SmtpClientResponseParser) {
+        define(['tcp-socket', 'wo-stringencoding', 'axe-logger', './smtpclient-response-parser'], function(TCPSocket, encoding, axe, SmtpClientResponseParser) {
             return factory(TCPSocket, encoding.TextEncoder, encoding.TextDecoder, axe, SmtpClientResponseParser, window.btoa);
         });
     } else if (typeof exports === 'object') {
-        var encoding = require('stringencoding');
-        module.exports = factory(require('tcp-socket'), encoding.TextEncoder, encoding.TextDecoder, require('axe'), require('./smtpclient-response-parser'), function(str) {
+        var encoding = require('wo-stringencoding');
+        module.exports = factory(require('tcp-socket'), encoding.TextEncoder, encoding.TextDecoder, require('axe-logger'), require('./smtpclient-response-parser'), function(str) {
             return new Buffer(str).toString("base64");
         });
     } else {
