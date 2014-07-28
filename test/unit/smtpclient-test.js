@@ -1,16 +1,12 @@
 'use strict';
 
-if (typeof define !== 'function') {
-    var define = require('amdefine')(module);
-}
-
-define(function(require) {
-
-    var chai = require('chai');
-    var sinon = require('sinon');
-    var axe = require('axe-logger');
-    var SmtpClient = require('../../src/smtpclient');
-
+(function(factory) {
+    if (typeof define === 'function' && define.amd) {
+        define(['chai', 'sinon', 'axe', 'smtpclient'], factory);
+    } else if (typeof exports === 'object') {
+        module.exports = factory(require('chai'), require('sinon'), require('axe-logger'), require('../../src/smtpclient'));
+    }
+}(function(chai, sinon, axe, SmtpClient) {
     var expect = chai.expect;
     chai.Assertion.includeStack = true;
 
@@ -22,7 +18,7 @@ define(function(require) {
 
         beforeEach(function() {
             axe.removeAppender(axe.defaultAppender);
-            
+
             host = '127.0.0.1',
             port = 10000,
             options = {
@@ -786,4 +782,4 @@ define(function(require) {
             });
         });
     });
-});
+}));

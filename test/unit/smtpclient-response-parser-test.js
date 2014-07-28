@@ -1,15 +1,12 @@
 'use strict';
 
-if (typeof define !== 'function') {
-    var define = require('amdefine')(module);
-}
-
-define(function(require) {
-
-    var chai = require('chai');
-    var sinon = require('sinon');
-    var SmtpResponseParser = require('../../src/smtpclient-response-parser');
-
+(function(factory) {
+    if (typeof define === 'function' && define.amd) {
+        define(['chai', 'sinon', '../../src/smtpclient-response-parser'], factory);
+    } else if (typeof exports === 'object') {
+        module.exports = factory(require('chai'), require('sinon'), require('../../src/smtpclient-response-parser'));
+    }
+}(function(chai, sinon, SmtpResponseParser) {
     var expect = chai.expect;
     chai.Assertion.includeStack = true;
 
@@ -124,4 +121,4 @@ define(function(require) {
             });
         });
     });
-});
+}));

@@ -22,7 +22,7 @@
     'use strict';
 
     if (typeof define === 'function' && define.amd) {
-        define(['tcp-socket', 'wo-stringencoding', 'axe-logger', './smtpclient-response-parser'], function(TCPSocket, encoding, axe, SmtpClientResponseParser) {
+        define(['tcp-socket', 'stringencoding', 'axe', './smtpclient-response-parser'], function(TCPSocket, encoding, axe, SmtpClientResponseParser) {
             return factory(TCPSocket, encoding.TextEncoder, encoding.TextDecoder, axe, SmtpClientResponseParser, window.btoa);
         });
     } else if (typeof exports === 'object') {
