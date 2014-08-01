@@ -56,7 +56,7 @@ where
 
 The following connection options can be used with `simplesmtp.connect`:
 
-  * **useSSL** *Boolean* Set to true, to use encrypted connection
+  * **useSecureTransport** *Boolean* Set to true, to use encrypted connection
   * **name** *String* Client hostname for introducing itself to the server
   * **auth** *Object* Authentication options. Depends on the preferred authentication method
     * **user** is the username for the user (also applies to OAuth2)
