@@ -177,7 +177,7 @@ describe('smtpclient authentication tests', function() {
             port: port,
             enableAuthentication: true,
             secureConnection: false,
-            ignoreTLS: true,
+            ignoreTLS: false,
             authMethods: ["PLAIN", "LOGIN", "XOAUTH2"]
         };
 
