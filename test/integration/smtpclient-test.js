@@ -7,6 +7,9 @@ var SmtpClient = require('../../src/smtpclient'),
     expect = chai.expect;
 
 describe('smtpclient node integration tests', function() {
+
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+
     var smtp, port = 10001,
         server;
 
@@ -174,7 +177,7 @@ describe('smtpclient authentication tests', function() {
             port: port,
             enableAuthentication: true,
             secureConnection: false,
-            ignoreTLS: true,
+            ignoreTLS: false,
             authMethods: ["PLAIN", "LOGIN", "XOAUTH2"]
         };
 

@@ -148,8 +148,7 @@
         this._currentAction = null;
 
         /**
-         * If STARTTLS support lands in TCPSocket, _secureMode can be set to
-         * true, once the connection is upgraded
+         * Indicates if the connection is secured or plaintext
          */
         this._secureMode = !!this.options.useSecureTransport;
     }
@@ -211,11 +210,6 @@
      */
     SmtpClient.prototype.connect = function() {
         this.socket = this._TCPSocket.open(this.host, this.port, {
-            /*
-                I wanted to use "string" at first but realized that if a
-                STARTTLS would have to be implemented not in the socket level
-                in the future, then the stream must be binary
-            */
             binaryType: 'arraybuffer',
             useSecureTransport: this._secureMode,
             ca: this.options.ca
@@ -617,7 +611,37 @@
             axe.debug(DEBUG_TAG, 'Maximum allowd message size: ' + this._maxAllowedSize);
         }
 
+        // Detect if the server supports STARTTLS
+        if (!this._secureMode && command.line.match(/[ \-]STARTTLS\s?$/mi) && !this.options.ignoreTLS) {
+            this._currentAction = this._actionSTARTTLS;
+            this._sendCommand('STARTTLS');
+            return;
+        }
+
         this._authenticateUser.call(this);
+    };
+
+    /**
+     * Handles server response for STARTTLS command. If there's an error
+     * try HELO instead, otherwise initiate TLS upgrade. If the upgrade
+     * succeedes restart the EHLO
+     *
+     * @param {String} str Message from the server
+     */
+    SmtpClient.prototype._actionSTARTTLS = function(command) {
+        if (!command.success) {
+            // Try HELO instead
+            this._currentAction = this._actionHELO;
+            this._sendCommand('HELO ' + this.options.name);
+            return;
+        }
+
+        this._secureMode = true;
+        this.socket.upgradeToSecure();
+
+        // restart protocol flow
+        this._currentAction = this._actionEHLO;
+        this._sendCommand('EHLO ' + this.options.name);
     };
 
     /**

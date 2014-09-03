@@ -65,6 +65,7 @@ The following connection options can be used with `simplesmtp.connect`:
   * **authMethod** *String* Force specific authentication method (eg. `"PLAIN"` for using `AUTH PLAIN` or `"XOAUTH2"` for `AUTH XOAUTH2`)
   * **disableEscaping** *Boolean* If set to true, do not escape dots on the beginning of the lines
   * **logLength** *Number* How many messages between the client and the server to log. Set to false to disable logging. Defaults to 6
+  * **ignoreTLS** – if set to true, do not issue STARTTLS even if the server supports it
 
 ### XOAUTH2
 

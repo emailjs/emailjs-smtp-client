@@ -36,6 +36,7 @@
             TCPSocket.prototype.suspend = function() {};
             TCPSocket.prototype.resume = function() {};
             TCPSocket.prototype.send = function() {};
+            TCPSocket.prototype.upgradeToSecure = function() {};
 
             socketStub = sinon.createStubInstance(TCPSocket);
             openStub = sinon.stub(TCPSocket, 'open');
@@ -412,6 +413,21 @@
 
                 _authenticateUserStub.restore();
             });
+
+            it('should proceed to starttls', function() {
+                var _sendCommandStub = sinon.stub(smtp, '_sendCommand');
+
+                smtp._secureMode = false;
+                smtp._actionEHLO({
+                    success: true,
+                    line: '250-STARTTLS'
+                });
+
+                expect(_sendCommandStub.withArgs('STARTTLS').callCount).to.equal(1);
+
+                expect(smtp._currentAction).to.equal(smtp._actionSTARTTLS);
+                _sendCommandStub.restore();
+            });
         });
 
         describe('#_actionHELO', function() {
@@ -425,6 +441,24 @@
                 expect(_authenticateUserStub.callCount).to.equal(1);
 
                 _authenticateUserStub.restore();
+            });
+        });
+
+        describe('#_actionSTARTTLS', function() {
+            it('should upgrade connection', function() {
+                var _sendCommandStub = sinon.stub(smtp, '_sendCommand');
+
+                smtp.options.name = 'abc';
+                smtp._actionSTARTTLS({
+                    success: true,
+                    line: '220 Ready to start TLS'
+                });
+
+                expect(smtp.socket.upgradeToSecure.callCount).to.equal(1);
+                expect(_sendCommandStub.withArgs('EHLO abc').callCount).to.equal(1);
+                expect(smtp._currentAction).to.equal(smtp._actionEHLO);
+
+                _sendCommandStub.restore();
             });
         });
 
