@@ -671,6 +671,7 @@
         if (!this._secureMode) {
             if (command.line.match(/[ \-]STARTTLS\s?$/mi) && !this.options.ignoreTLS || !!this.options.requireTLS) {
                 this._currentAction = this._actionSTARTTLS;
+                axe.debug(DEBUG_TAG, 'Sending STARTTLS');
                 this._sendCommand('STARTTLS');
                 return;
             }
