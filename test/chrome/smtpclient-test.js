@@ -202,6 +202,7 @@ define(['chai', 'smtpclient'], function(chai, SmtpClient) {
             });
             expect(smtp).to.exist;
 
+            smtp.oncert = function() {};
             smtp.connect();
             smtp.onidle = function() {
                 smtp.onclose = done;
