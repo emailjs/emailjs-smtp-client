@@ -54,6 +54,24 @@
             TCPSocket.open.restore();
         });
 
+        describe('#connect', function() {
+            it('should not throw', function() {
+                var client = new SmtpClient(host, port);
+                client._TCPSocket = {
+                    open: function() {
+                        var socket = {
+                            onopen: function() {},
+                            onerror: function() {}
+                        };
+                        // disallow setting new properties (eg. oncert)
+                        Object.preventExtensions(socket);
+                        return socket;
+                    }
+                };
+                client.connect();
+            });
+        });
+
         describe('#suspend', function() {
             it('should call suspend', function() {
                 socketStub.readyState = 'open';
