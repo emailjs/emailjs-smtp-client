@@ -616,10 +616,12 @@
         }
 
         // Detect if the server supports STARTTLS
-        if (!this._secureMode && command.line.match(/[ \-]STARTTLS\s?$/mi) && !this.options.ignoreTLS) {
-            this._currentAction = this._actionSTARTTLS;
-            this._sendCommand('STARTTLS');
-            return;
+        if (!this._secureMode) {
+            if (command.line.match(/[ \-]STARTTLS\s?$/mi) && !this.options.ignoreTLS || !!this.options.requireTLS) {
+                this._currentAction = this._actionSTARTTLS;
+                this._sendCommand('STARTTLS');
+                return;
+            }
         }
 
         this._authenticateUser.call(this);
@@ -634,9 +636,8 @@
      */
     SmtpClient.prototype._actionSTARTTLS = function(command) {
         if (!command.success) {
-            // Try HELO instead
-            this._currentAction = this._actionHELO;
-            this._sendCommand('HELO ' + this.options.name);
+            axe.error(DEBUG_TAG, 'STARTTLS not successful');
+            this._onError(new Error(command.data));
             return;
         }
 
