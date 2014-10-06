@@ -9,7 +9,7 @@
   ],
   "license": "MIT",
   "scripts": {
-    "pretest": "cd node_modules/tcp-socket/node_modules/node-forge/ && npm install && npm run minify && cd ../../../..",
+    "pretest": "dir=$(pwd) && cd node_modules/tcp-socket/node_modules/node-forge/ && npm install && npm run minify && cd $dir",
     "test": "grunt"
   },
   "repository": {
@@ -18,7 +18,7 @@
   },
   "main": "src/smtpclient",
   "dependencies": {
-    "tcp-socket": "~0.3.4",
+    "tcp-socket": "https://github.com/whiteout-io/tcp-socket/tarball/dev/WO-559",
     "wo-stringencoding": "~0.1.1",
     "axe-logger": "~0.0.2"
   },
