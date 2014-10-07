@@ -7,7 +7,7 @@ var SmtpClient = require('../../src/smtpclient'),
     expect = chai.expect;
 
 describe('smtpclient node integration tests', function() {
-
+    chai.Assertion.includeStack = true;
     process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
     var smtp, port = 10001,
@@ -306,6 +306,7 @@ describe('smtpclient STARTTLS tests', function() {
     var port = 10001,
         server;
 
+    chai.Assertion.includeStack = true;
     describe('STARTTLS is supported', function() {
         before(function(done) {
             // start smtp test server

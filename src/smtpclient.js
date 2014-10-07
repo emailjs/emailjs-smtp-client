@@ -212,7 +212,8 @@
         this.socket = this._TCPSocket.open(this.host, this.port, {
             binaryType: 'arraybuffer',
             useSecureTransport: this._secureMode,
-            ca: this.options.ca
+            ca: this.options.ca,
+            tlsWorkerPath: this.options.tlsWorkerPath
         });
 
         // allows certificate handling for platform w/o native tls support

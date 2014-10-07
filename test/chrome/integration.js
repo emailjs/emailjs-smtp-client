@@ -1,5 +1,5 @@
 require.config({
-    baseUrl: '../lib',
+    baseUrl: 'lib',
     paths: {
         'test': '..',
         'punycode': 'punycode.min',
@@ -14,7 +14,7 @@ require.config({
 });
 
 mocha.setup('bdd');
-require(['../chrome/smtpclient-test'], function() {
+require(['test/smtpclient-test'], function() {
     'use strict';
 
     window.mocha.run();
