@@ -21,16 +21,26 @@
 (function(root, factory) {
     'use strict';
 
+    var encoding;
+
     if (typeof define === 'function' && define.amd) {
+        // AMD in browser environment
         define(['tcp-socket', 'stringencoding', 'axe', './smtpclient-response-parser'], function(TCPSocket, encoding, axe, SmtpClientResponseParser) {
             return factory(TCPSocket, encoding.TextEncoder, encoding.TextDecoder, axe, SmtpClientResponseParser, window.btoa);
         });
+    } else if (typeof exports === 'object' && typeof navigator !== 'undefined') {
+        // common.js in browser environment
+        encoding = require('wo-stringencoding');
+        module.exports = factory(require('tcp-socket'), encoding.TextEncoder, encoding.TextDecoder, require('axe-logger'), require('./smtpclient-response-parser'), btoa);
     } else if (typeof exports === 'object') {
-        var encoding = require('wo-stringencoding');
+        // node.js
+        encoding = require('wo-stringencoding');
         module.exports = factory(require('tcp-socket'), encoding.TextEncoder, encoding.TextDecoder, require('axe-logger'), require('./smtpclient-response-parser'), function(str) {
-            return new Buffer(str).toString("base64");
+            var NodeBuffer = require('buffer').Buffer;
+            return new NodeBuffer(str, 'binary').toString("base64");
         });
     } else {
+        // browser global
         navigator.TCPSocket = navigator.TCPSocket || navigator.mozTCPSocket;
         root.SmtpClient = factory(navigator.TCPSocket, root.TextEncoder, root.TextDecoder, root.axe, root.SmtpClientResponseParser, window.btoa);
     }
