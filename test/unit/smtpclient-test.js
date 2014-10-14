@@ -37,6 +37,9 @@
             TCPSocket.prototype.resume = function() {};
             TCPSocket.prototype.send = function() {};
             TCPSocket.prototype.upgradeToSecure = function() {};
+            TCPSocket.getHostname = function(fn) {
+                fn(null, 'hostname.io');
+            };
 
             socketStub = sinon.createStubInstance(TCPSocket);
             openStub = sinon.stub(TCPSocket, 'open');
@@ -45,6 +48,7 @@
 
             smtp.connect();
 
+            expect(smtp.options.name).to.equal('hostname.io');
             expect(openStub.callCount).to.equal(1);
             expect(socketStub.onerror).to.exist;
             expect(socketStub.onopen).to.exist;

@@ -90,7 +90,7 @@
         /**
          * Hostname of the client, this will be used for introducing to the server
          */
-        this.options.name = this.options.name || 'localhost';
+        this.options.name = this.options.name || false;
 
         /**
          * Downstream TCP socket to the SMTP server, created with mozTCPSocket
@@ -219,6 +219,16 @@
      * Initiate a connection to the server
      */
     SmtpClient.prototype.connect = function() {
+        if (!this.options.name && 'getHostname' in this._TCPSocket && typeof this._TCPSocket.getHostname === 'function') {
+            this._TCPSocket.getHostname(function(err, hostname) {
+                this.options.name = hostname ||  'localhost';
+                this.connect();
+            }.bind(this));
+            return;
+        } else if (!this.options.name) {
+            this.options.name = 'localhost';
+        }
+
         this.socket = this._TCPSocket.open(this.host, this.port, {
             binaryType: 'arraybuffer',
             useSecureTransport: this._secureMode,
