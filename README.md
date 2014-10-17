@@ -14,7 +14,7 @@ Depending on your browser, you might need [this polyfill for ArrayBuffer #slice]
 
 There is a [shim](https://github.com/whiteout-io/tcp-socket) that brings [Mozilla-flavored](https://developer.mozilla.org/en-US/docs/WebAPI/TCP_Socket) version of the [Raw Socket API](http://www.w3.org/TR/raw-sockets/) to other platforms.
 
-If you are on a platform that uses forge instead of a native TLS implementation (e.g. chrome.socket), you have to set the .oncert(pemEncodedCertificate) handler that passes the TLS certificate that the server presents. It can be used on a trust-on-first-use basis for subsequent connection. 
+If you are on a platform that uses forge instead of a native TLS implementation (e.g. chrome.socket), you have to set the .oncert(pemEncodedCertificate) handler that passes the TLS certificate that the server presents. It can be used on a trust-on-first-use basis for subsequent connection.
 
 If forge is used to handle TLS traffic, you may choose to handle the TLS-related load in a Web Worker. Please use tlsWorkerPath to point to `tcp-socket-tls-worker.js`!
 
@@ -77,8 +77,9 @@ The following connection options can be used with `simplesmtp.connect`:
   * **tlsWorkerPath** (optional) (only in conjunction with this [TCPSocket shim](https://github.com/whiteout-io/tcp-socket)) if you use TLS with forge, this path indicates where the file for the TLS Web Worker is located. Please refer to the [tcp-socket documentation](https://github.com/whiteout-io/tcp-socket) for more information!
   * **disableEscaping** *Boolean* If set to true, do not escape dots on the beginning of the lines
   * **logLength** *Number* How many messages between the client and the server to log. Set to false to disable logging. Defaults to 6
-  * **ignoreTLS** – if set to true, do not issue STARTTLS even if the server supports it
+  * **ignoreTLS** – if set to true, do not issue STARTTLS even if the server supports it
   * **requireTLS** – if set to true, always use STARTTLS before authentication even if the host does not advertise it. If STARTTLS fails, do not try to authenticate the user
+  * **lmtp** - if set to true use LMTP commands instead of SMTP commands
 
 Default STARTTLS support is opportunistic – if the server advertises STARTTLS in EHLO response, the client tries to use it. If STARTTLS is not advertised, the clients sends passwords in the plain. You can use `ignoreTLS` and `requireTLS` to change this behavior by explicitly enabling or disabling STARTTLS usage.
 
