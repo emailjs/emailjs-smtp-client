@@ -405,6 +405,38 @@
 
                 _sendCommandStub.restore();
             });
+
+            it('should send LHLO on greeting', function() {
+                var _sendCommandStub = sinon.stub(smtp, '_sendCommand');
+
+                smtp.options.name = 'abc';
+                smtp.options.lmtp = true;
+                smtp._actionGreeting({
+                    statusCode: 220,
+                    data: 'test'
+                });
+
+                expect(_sendCommandStub.withArgs('LHLO abc').callCount).to.equal(1);
+                expect(smtp._currentAction).to.equal(smtp._actionLHLO);
+
+                _sendCommandStub.restore();
+            });
+        });
+
+        describe('#_actionLHLO', function() {
+            it('should proceed to EHLO', function() {
+                var _actionEHLOStub = sinon.stub(smtp, '_actionEHLO');
+
+                smtp.options.name = 'abc';
+                smtp._actionLHLO({
+                    success: true,
+                    line: '250-AUTH PLAIN LOGIN'
+                });
+
+                expect(_actionEHLOStub.callCount).to.equal(1);
+
+                _actionEHLOStub.restore();
+            });
         });
 
         describe('#_actionEHLO', function() {
@@ -668,7 +700,8 @@
                 smtp._envelope = {
                     to: ['abc'],
                     rcptFailed: [],
-                    rcptQueue: []
+                    rcptQueue: [],
+                    responseQueue: []
                 };
                 smtp._actionRCPT({
                     success: true
@@ -684,7 +717,8 @@
                 var _sendCommandStub = sinon.stub(smtp, '_sendCommand');
 
                 smtp._envelope = {
-                    rcptQueue: ['receiver']
+                    rcptQueue: ['receiver'],
+                    responseQueue: []
                 };
                 smtp._actionRCPT({
                     success: true
@@ -702,7 +736,8 @@
                 smtp._envelope = {
                     to: ['abc'],
                     rcptFailed: ['abc'],
-                    rcptQueue: []
+                    rcptQueue: [],
+                    responseQueue: []
                 };
                 smtp._actionRCPT({
                     success: true
@@ -829,6 +864,54 @@
                 expect(_onidleStub.callCount).to.equal(0);
 
                 _onidleStub.restore();
+            });
+
+            describe('LMTP responses', function() {
+                it('should receive single responses', function() {
+                    var _ondoneStub = sinon.stub(smtp, 'ondone');
+
+                    smtp.options.lmtp = true;
+                    smtp._envelope = {
+                        responseQueue: ['abc'],
+                        rcptFailed: []
+                    };
+
+                    smtp._actionStream({
+                        success: false
+                    });
+
+                    expect(_ondoneStub.withArgs(true).callCount).to.equal(1);
+                    expect(smtp._envelope.rcptFailed).to.deep.equal(['abc']);
+
+                    _ondoneStub.restore();
+                });
+
+                it('should wait for additional responses', function() {
+                    var _ondoneStub = sinon.stub(smtp, 'ondone');
+
+                    smtp.options.lmtp = true;
+                    smtp._envelope = {
+                        responseQueue: ['abc', 'def', 'ghi'],
+                        rcptFailed: []
+                    };
+
+                    smtp._actionStream({
+                        success: false
+                    });
+
+                    smtp._actionStream({
+                        success: true
+                    });
+
+                    smtp._actionStream({
+                        success: false
+                    });
+
+                    expect(_ondoneStub.withArgs(true).callCount).to.equal(1);
+                    expect(smtp._envelope.rcptFailed).to.deep.equal(['abc', 'ghi']);
+
+                    _ondoneStub.restore();
+                });
             });
         });
 

@@ -221,7 +221,7 @@
     SmtpClient.prototype.connect = function() {
         if (!this.options.name && 'getHostname' in this._TCPSocket && typeof this._TCPSocket.getHostname === 'function') {
             this._TCPSocket.getHostname(function(err, hostname) {
-                this.options.name = hostname ||  'localhost';
+                this.options.name = hostname || 'localhost';
                 this.connect();
             }.bind(this));
             return;
@@ -313,6 +313,7 @@
         // clone the recipients array for latter manipulation
         this._envelope.rcptQueue = [].concat(this._envelope.to);
         this._envelope.rcptFailed = [];
+        this._envelope.responseQueue = [];
 
         this._currentAction = this._actionMAIL;
         axe.debug(DEBUG_TAG, 'Sending MAIL FROM...');
@@ -590,10 +591,33 @@
             return;
         }
 
-        axe.debug(DEBUG_TAG, 'Sending EHLO ' + this.options.name);
+        if (this.options.lmtp) {
+            axe.debug(DEBUG_TAG, 'Sending LHLO ' + this.options.name);
 
-        this._currentAction = this._actionEHLO;
-        this._sendCommand('EHLO ' + this.options.name);
+            this._currentAction = this._actionLHLO;
+            this._sendCommand('LHLO ' + this.options.name);
+        } else {
+            axe.debug(DEBUG_TAG, 'Sending EHLO ' + this.options.name);
+
+            this._currentAction = this._actionEHLO;
+            this._sendCommand('EHLO ' + this.options.name);
+        }
+    };
+
+    /**
+     * Response to LHLO
+     *
+     * @param {Object} command Parsed command from the server {statusCode, data, line}
+     */
+    SmtpClient.prototype._actionLHLO = function(command) {
+        if (!command.success) {
+            axe.error(DEBUG_TAG, 'LHLO not successful');
+            this._onError(new Error(command.data));
+            return;
+        }
+
+        // Process as EHLO response
+        this._actionEHLO(command);
     };
 
     /**
@@ -801,6 +825,8 @@
             axe.warn(DEBUG_TAG, 'RCPT TO failed for: ' + this._envelope.curRecipient);
             // this is a soft error
             this._envelope.rcptFailed.push(this._envelope.curRecipient);
+        } else {
+            this._envelope.responseQueue.push(this._envelope.curRecipient);
         }
 
         if (!this._envelope.rcptQueue.length) {
@@ -835,7 +861,6 @@
         }
 
         this._authenticatedAs = null;
-
         this._authenticateUser.call(this);
     };
 
@@ -865,16 +890,39 @@
      * @param {Object} command Parsed command from the server {statusCode, data, line}
      */
     SmtpClient.prototype._actionStream = function(command) {
-        this._currentAction = this._actionIdle;
+        var rcpt;
 
-        if (!command.success) {
-            // Message failed
-            axe.error(DEBUG_TAG, 'Message sending failed.');
-            this.ondone(false);
-        } else {
-            axe.debug(DEBUG_TAG, 'Message sent successfully.');
-            // Message sent succesfully
+        if (this.options.lmtp) {
+            // LMTP returns a response code for *every* successfully set recipient
+            // For every recipient the message might succeed or fail individually
+
+            rcpt = this._envelope.responseQueue.shift();
+            if (!command.success) {
+                axe.error(DEBUG_TAG, 'Local delivery to ' + rcpt + ' failed.');
+                this._envelope.rcptFailed.push(rcpt);
+            } else {
+                axe.error(DEBUG_TAG, 'Local delivery to ' + rcpt + ' succeeded.');
+            }
+
+            if (this._envelope.responseQueue.length) {
+                this._currentAction = this._actionStream;
+                return;
+            }
+
+            this._currentAction = this._actionIdle;
             this.ondone(true);
+        } else {
+            // For SMTP the message either fails or succeeds, there is no information
+            // about individual recipients
+
+            if (!command.success) {
+                axe.error(DEBUG_TAG, 'Message sending failed.');
+            } else {
+                axe.debug(DEBUG_TAG, 'Message sent successfully.');
+            }
+
+            this._currentAction = this._actionIdle;
+            this.ondone(!!command.success);
         }
 
         // If the client wanted to do something else (eg. to quit), do not force idle
