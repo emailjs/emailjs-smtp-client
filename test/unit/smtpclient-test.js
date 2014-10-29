@@ -2,11 +2,11 @@
 
 (function(factory) {
     if (typeof define === 'function' && define.amd) {
-        define(['chai', 'sinon', 'axe', 'smtpclient'], factory);
+        define(['chai', 'axe', 'smtpclient'], factory.bind(null, sinon));
     } else if (typeof exports === 'object') {
-        module.exports = factory(require('chai'), require('sinon'), require('axe-logger'), require('../../src/smtpclient'));
+        module.exports = factory(require('sinon'), require('chai'), require('axe-logger'), require('../../src/smtpclient'));
     }
-}(function(chai, sinon, axe, SmtpClient) {
+}(function(sinon, chai, axe, SmtpClient) {
     var expect = chai.expect;
     chai.Assertion.includeStack = true;
 
