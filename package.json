@@ -18,7 +18,7 @@
   },
   "main": "src/smtpclient",
   "dependencies": {
-    "tcp-socket": "https://github.com/whiteout-io/tcp-socket/tarball/dev/WO-593",
+    "tcp-socket": "~0.4.0",
     "wo-stringencoding": "~0.1.1",
     "axe-logger": "~0.0.2"
   },
