@@ -6,11 +6,6 @@ require.config({
         'test': '..',
         'forge': 'forge.min',
         'stringencoding': 'stringencoding.min'
-    },
-    shim: {
-        sinon: {
-            exports: 'sinon',
-        }
     }
 });
 
