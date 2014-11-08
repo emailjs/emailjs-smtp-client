@@ -445,4 +445,59 @@ describe('smtpclient STARTTLS tests', function() {
             };
         });
     });
-});
+
+    describe('no STARTTLS because no EHLO, only HELO', function() {
+        before(function(done) {
+            // start smtp test server
+            var options = {
+                debug: false,
+                disableDNSValidation: true,
+                port: port,
+                enableAuthentication: true,
+                secureConnection: false,
+                disableEHLO: true,
+                ignoreTLS: true,
+                authMethods: ["PLAIN", "LOGIN", "XOAUTH2"],
+                disableSTARTTLS: true
+            };
+
+            server = simplesmtp.createServer(options);
+            server.on('startData', function( /*connection*/ ) {});
+            server.on('data', function( /*connection, chunk*/ ) {});
+            server.on('dataReady', function(connection, callback) {
+                callback(null, 'foo');
+            });
+            server.on('authorizeUser', function(connection, username, password, callback) {
+                callback(null, username === 'abc' && password === 'def');
+            });
+            server.listen(options.port, done);
+        });
+
+        after(function(done) {
+            // close smtp test server
+            server.end(done);
+        });
+
+        it('should fail connecting to insecure server', function(done) {
+            var smtp = new SmtpClient('127.0.0.1', port, {
+                useSecureTransport: false,
+                auth: {
+                    user: 'abc',
+                    pass: 'def'
+                },
+                requireTLS: true
+            });
+            expect(smtp).to.exist;
+
+            smtp.connect();
+
+            smtp.onerror = function(err) {
+                expect(err).to.exist;
+                expect(err.message).to.equal('STARTTLS not supported without EHLO');
+                expect(smtp._secureMode).to.be.false;
+                smtp.onclose = done;
+                smtp.quit();
+            };
+        });
+    });
+})
