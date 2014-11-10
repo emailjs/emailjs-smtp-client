@@ -629,6 +629,13 @@
         var match;
 
         if (!command.success) {
+            if (!this._secureMode && this.options.requireTLS) {
+                var errMsg = 'STARTTLS not supported without EHLO';
+                axe.error(DEBUG_TAG, errMsg);
+                this._onError(new Error(errMsg));
+                return;
+            }
+
             // Try HELO instead
             axe.warn(DEBUG_TAG, 'EHLO not successful, trying HELO ' + this.options.name);
             this._currentAction = this._actionHELO;
