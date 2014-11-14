@@ -163,6 +163,41 @@ describe('smtpclient node integration tests', function() {
             to: ['receiver@localhost']
         });
     });
+
+    it('shoud timeout', function(done) {
+        var errored = false;
+
+        smtp.onerror = function() {
+            errored = true;
+        };
+
+        smtp.onclose = function() {
+            expect(errored).to.be.true;
+            done();
+        };
+
+        smtp.onready = function(failedRecipients) {
+            expect(failedRecipients).to.be.empty;
+
+            // remove the ondata event to simulate 100% packet loss and make the socket time out after 10ms
+            smtp.TIMEOUT_SOCKET_LOWER_BOUND = 10;
+            smtp.TIMEOUT_SOCKET_MULTIPLIER = 0;
+            smtp.socket.ondata = function() {};
+
+            smtp.send('Subject: test\r\n\r\nMessage body'); // trigger write
+        };
+
+        smtp.onidle = smtp.ondone = function() {
+            // should not happen
+            expect(true).to.be.false;
+        };
+
+        smtp.useEnvelope({
+            from: 'sender@localhost',
+            to: ['receiver@localhost']
+        });
+
+    });
 });
 
 describe('smtpclient authentication tests', function() {
