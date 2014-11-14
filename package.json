@@ -1,6 +1,6 @@
 {
   "name": "wo-smtpclient",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "homepage": "https://github.com/whiteout-io/smtpclient",
   "description": "SMTP Client allows you to connect to and stream data to a SMTP server in the browser.",
   "author": "Andris Reinman <andris@kreata.ee>",

@@ -161,7 +161,32 @@
          * Indicates if the connection is secured or plaintext
          */
         this._secureMode = !!this.options.useSecureTransport;
+
+        /**
+         * Timer waiting to declare the socket dead starting from the last write
+         */
+        this._socketTimeoutTimer = false;
     }
+
+    //
+    // CONSTANTS
+    //
+
+
+    /**
+     * Lower Bound for socket timeout to wait since the last data was written to a socket
+     */
+    SmtpClient.prototype.TIMEOUT_SOCKET_LOWER_BOUND = 10000;
+
+    /**
+     * Multiplier for socket timeout:
+     *
+     * We assume at least a GPRS connection with 115 kb/s = 14,375 kB/s tops, so 10 KB/s to be on
+     * the safe side. We can timeout after a lower bound of 10s + (n KB / 10 KB/s). A 1 MB message
+     * upload would be 110 seconds to wait for the timeout. 10 KB/s === 0.1 s/B
+     */
+    SmtpClient.prototype.TIMEOUT_SOCKET_MULTIPLIER = 0.1;
+
 
     //
     // EVENTS
@@ -366,11 +391,11 @@
         // indicate that the stream has ended by sending a single dot on its own line
         // if the client already closed the data with \r\n no need to do it again
         if (this._lastDataBytes === '\r\n') {
-            this.waitDrain = this.socket.send(new Uint8Array([0x2E, 0x0D, 0x0A]).buffer); // .\r\n
+            this.waitDrain = this._send(new Uint8Array([0x2E, 0x0D, 0x0A]).buffer); // .\r\n
         } else if (this._lastDataBytes.substr(-1) === '\r') {
-            this.waitDrain = this.socket.send(new Uint8Array([0x0A, 0x2E, 0x0D, 0x0A]).buffer); // \n.\r\n
+            this.waitDrain = this._send(new Uint8Array([0x0A, 0x2E, 0x0D, 0x0A]).buffer); // \n.\r\n
         } else {
-            this.waitDrain = this.socket.send(new Uint8Array([0x0D, 0x0A, 0x2E, 0x0D, 0x0A]).buffer); // \r\n.\r\n
+            this.waitDrain = this._send(new Uint8Array([0x0D, 0x0A, 0x2E, 0x0D, 0x0A]).buffer); // \r\n.\r\n
         }
 
         // end data mode
@@ -469,10 +494,18 @@
         }
     };
 
+    SmtpClient.prototype._onTimeout = function() {
+        // inform about the timeout and shut down
+        var error = new Error('Socket timed out!');
+        this._onError(error);
+    };
+
     /**
      * Ensures that the connection is closed and such
      */
     SmtpClient.prototype._destroy = function() {
+        clearTimeout(this._socketTimeoutTimer);
+
         if (!this.destroyed) {
             this.destroyed = true;
             this.onclose();
@@ -505,7 +538,7 @@
         axe.debug(DEBUG_TAG, 'Sending ' + chunk.length + ' bytes of payload');
 
         // pass the chunk to the socket
-        this.waitDrain = this.socket.send(new TextEncoder('UTF-8').encode(chunk).buffer);
+        this.waitDrain = this._send(new TextEncoder('UTF-8').encode(chunk).buffer);
         return this.waitDrain;
     };
 
@@ -515,7 +548,16 @@
      * @param {String} str String to be sent to the server
      */
     SmtpClient.prototype._sendCommand = function(str) {
-        this.waitDrain = this.socket.send(new TextEncoder('UTF-8').encode(str + (str.substr(-2) !== '\r\n' ? '\r\n' : '')).buffer);
+        this.waitDrain = this._send(new TextEncoder('UTF-8').encode(str + (str.substr(-2) !== '\r\n' ? '\r\n' : '')).buffer);
+    };
+
+
+    SmtpClient.prototype._send = function(buffer) {
+        var timeout = this.TIMEOUT_SOCKET_LOWER_BOUND + Math.floor(buffer.byteLength * this.TIMEOUT_SOCKET_MULTIPLIER);
+        clearTimeout(this._socketTimeoutTimer); // clear pending timeouts
+        this._socketTimeoutTimer = setTimeout(this._onTimeout.bind(this), timeout); // arm the next timeout
+
+        return this.socket.send(buffer);
     };
 
     /**
