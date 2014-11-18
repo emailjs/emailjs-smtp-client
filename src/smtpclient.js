@@ -433,6 +433,7 @@
      * @param {Event} evt Event object. See `evt.data` for the chunk received
      */
     SmtpClient.prototype._onData = function(evt) {
+        clearTimeout(this._socketTimeoutTimer);
         var stringPayload = new TextDecoder('UTF-8').decode(new Uint8Array(evt.data));
         axe.debug(DEBUG_TAG, 'SERVER: ' + stringPayload);
         this._parser.send(stringPayload);
