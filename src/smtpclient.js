@@ -28,7 +28,7 @@
         define(['tcp-socket', 'stringencoding', 'axe', './smtpclient-response-parser'], function(TCPSocket, encoding, axe, SmtpClientResponseParser) {
             return factory(TCPSocket, encoding.TextEncoder, encoding.TextDecoder, axe, SmtpClientResponseParser, window.btoa);
         });
-    } else if (typeof exports === 'object' && typeof navigator !== 'undefined') {
+    } else if (typeof exports === 'object' && typeof navigator !== 'undefined' && typeof btoa !== 'undefined') {
         // common.js in browser environment
         encoding = require('wo-stringencoding');
         module.exports = factory(require('tcp-socket'), encoding.TextEncoder, encoding.TextDecoder, require('axe-logger'), require('./smtpclient-response-parser'), btoa);
