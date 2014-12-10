@@ -408,6 +408,30 @@ describe('smtpclient STARTTLS tests', function() {
                 smtp.quit();
             };
         });
+
+        it('should reject invalid certificate', function(done) {
+            var smtp = new SmtpClient('127.0.0.1', port, {
+                useSecureTransport: false,
+                auth: {
+                    user: 'abc',
+                    pass: 'def'
+                }
+            });
+            expect(smtp).to.exist;
+
+            smtp.onerror = function(err) {
+                process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+                expect(err).to.exist;
+                expect(err.code).to.equal('ETLS');
+                expect(smtp._secureMode).to.be.false;
+
+                smtp.onclose = done;
+                smtp.close();
+            };
+
+            process.env.NODE_TLS_REJECT_UNAUTHORIZED = '1'; // reject invalid certs
+            smtp.connect();
+        });
     });
 
     describe('STARTTLS is disabled', function() {
