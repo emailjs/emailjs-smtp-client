@@ -20,11 +20,11 @@
             axe.removeAppender(axe.defaultAppender);
 
             host = '127.0.0.1',
-            port = 10000,
-            options = {
-                useSecureTransport: true,
-                ca: 'WOW. SUCH CERT. MUCH TLS.'
-            };
+                port = 10000,
+                options = {
+                    useSecureTransport: true,
+                    ca: 'WOW. SUCH CERT. MUCH TLS.'
+                };
 
             smtp = new SmtpClient(host, port, options);
             expect(smtp).to.exist;
@@ -37,25 +37,31 @@
             TCPSocket.prototype.resume = function() {};
             TCPSocket.prototype.send = function() {};
             TCPSocket.prototype.upgradeToSecure = function() {};
-            TCPSocket.getHostname = function(fn) {
-                fn(null, 'hostname.io');
-            };
 
             socketStub = sinon.createStubInstance(TCPSocket);
-            openStub = sinon.stub(TCPSocket, 'open');
-
-            openStub.withArgs(host, port).returns(socketStub);
+            openStub = sinon.stub(TCPSocket, 'open').withArgs(host, port).returns(socketStub);
 
             smtp.connect();
 
-            expect(smtp.options.name).to.equal('hostname.io');
             expect(openStub.callCount).to.equal(1);
-            expect(socketStub.onerror).to.exist;
             expect(socketStub.onopen).to.exist;
+            expect(socketStub.onerror).to.exist;
         });
 
         afterEach(function() {
             TCPSocket.open.restore();
+        });
+
+        describe('tcp-socket websocket proxy', function() {
+            it('should send hostname in onopen', function() {
+                socketStub.onopen({
+                    data: {
+                        proxyHostname: 'hostname.io' // hostname of the socket.io proxy in tcp-socket
+                    }
+                });
+
+                expect(smtp.options.name).to.equal('hostname.io');
+            });
         });
 
         describe('#connect', function() {
