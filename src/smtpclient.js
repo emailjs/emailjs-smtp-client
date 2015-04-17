@@ -398,8 +398,10 @@
             this.waitDrain = this._send(new Uint8Array([0x0D, 0x0A, 0x2E, 0x0D, 0x0A]).buffer); // \r\n.\r\n
         }
 
-        // end data mode
+        // end data mode, reset the variables for extending the timeout in data mode
         this._dataMode = false;
+        this._socketTimeoutStart = false;
+        this._socketTimeoutPeriod = false;
 
         return this.waitDrain;
     };
