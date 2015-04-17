@@ -166,6 +166,16 @@
          * Timer waiting to declare the socket dead starting from the last write
          */
         this._socketTimeoutTimer = false;
+
+        /**
+         * Start time of sending the first packet in data mode
+         */
+        this._socketTimeoutStart = false;
+
+        /**
+         * Timeout for sending in data mode, gets extended with every send()
+         */
+        this._socketTimeoutPeriod = false;
     }
 
     //
@@ -388,8 +398,10 @@
             this.waitDrain = this._send(new Uint8Array([0x0D, 0x0A, 0x2E, 0x0D, 0x0A]).buffer); // \r\n.\r\n
         }
 
-        // end data mode
+        // end data mode, reset the variables for extending the timeout in data mode
         this._dataMode = false;
+        this._socketTimeoutStart = false;
+        this._socketTimeoutPeriod = false;
 
         return this.waitDrain;
     };
@@ -548,11 +560,33 @@
 
 
     SmtpClient.prototype._send = function(buffer) {
-        var timeout = this.TIMEOUT_SOCKET_LOWER_BOUND + Math.floor(buffer.byteLength * this.TIMEOUT_SOCKET_MULTIPLIER);
+        this._setTimeout(buffer.byteLength);
+        return this.socket.send(buffer);
+    };
+
+    SmtpClient.prototype._setTimeout = function(byteLength) {
+        var prolongPeriod = Math.floor(byteLength * this.TIMEOUT_SOCKET_MULTIPLIER);
+        var timeout;
+
+        if (this._dataMode) {
+            // we're in data mode, so we count only one timeout that get extended for every send().
+            var now = Date.now();
+
+            // the old timeout start time
+            this._socketTimeoutStart = this._socketTimeoutStart || now;
+
+            // the old timeout period, normalized to a minimum of TIMEOUT_SOCKET_LOWER_BOUND
+            this._socketTimeoutPeriod = (this._socketTimeoutPeriod || this.TIMEOUT_SOCKET_LOWER_BOUND) + prolongPeriod;
+
+            // the new timeout is the delta between the new firing time (= timeout period + timeout start time) and now
+            timeout = this._socketTimeoutStart + this._socketTimeoutPeriod - now;
+        } else {
+            // set new timout
+            timeout = this.TIMEOUT_SOCKET_LOWER_BOUND + prolongPeriod;
+        }
+
         clearTimeout(this._socketTimeoutTimer); // clear pending timeouts
         this._socketTimeoutTimer = setTimeout(this._onTimeout.bind(this), timeout); // arm the next timeout
-
-        return this.socket.send(buffer);
     };
 
     /**
