@@ -162,6 +162,11 @@
          */
         this._secureMode = !!this.options.useSecureTransport;
 
+        /*
+         * Flag that indicates if we are waiting for the STARTTLS upgrade to finish
+         */
+        this.upgradeInProcess = false;
+
         /**
          * Timer waiting to declare the socket dead starting from the last write
          */
@@ -440,6 +445,8 @@
      */
     SmtpClient.prototype._onData = function(evt) {
         clearTimeout(this._socketTimeoutTimer);
+        this.upgradeInProcess = false; // we got some data, so if the connections was about to be updated, it must have succeeded
+
         var stringPayload = new TextDecoder('UTF-8').decode(new Uint8Array(evt.data));
         axe.debug(DEBUG_TAG, 'SERVER: ' + stringPayload);
         this._parser.send(stringPayload);
@@ -463,16 +470,23 @@
      * @param {Event} evt Event object. See evt.data for the error
      */
     SmtpClient.prototype._onError = function(evt) {
+        var err;
+
         if (evt instanceof Error && evt.message) {
-            axe.error(DEBUG_TAG, evt);
-            this.onerror(evt);
-        } else if (evt && evt.data instanceof Error) {
-            axe.error(DEBUG_TAG, evt.data);
-            this.onerror(evt.data);
+            err = evt;
+        } else if (evt && this._isError(evt.data)) {
+            err = evt.data;
         } else {
-            axe.error(DEBUG_TAG, new Error(evt && evt.data && evt.data.message || evt.data || evt || 'Error'));
-            this.onerror(new Error(evt && evt.data && evt.data.message || evt.data || evt || 'Error'));
+            err = new Error(evt && evt.data && evt.data.message || evt.data || evt || 'Error');
         }
+
+        if (this.upgradeInProcess) {
+            this._secureMode = false;
+            err.code = 'ETLS';
+        }
+
+        axe.error(DEBUG_TAG, err);
+        this.onerror(err);
 
         this.close();
     };
@@ -503,7 +517,7 @@
 
     SmtpClient.prototype._onTimeout = function() {
         // inform about the timeout and shut down
-        var error = new Error('Socket timed out!');
+        var error = this._formatError('Socket timed out!', 'ETIMEDOUT');
         this._onError(error);
     };
 
@@ -646,7 +660,7 @@
                 return;
         }
 
-        this._onError(new Error('Unknown authentication method ' + auth));
+        this._onError(this._formatError('Unknown authentication method ' + auth, 'EAUTH'));
     };
 
     // ACTIONS FOR RESPONSES FROM THE SMTP SERVER
@@ -658,7 +672,7 @@
      */
     SmtpClient.prototype._actionGreeting = function(command) {
         if (command.statusCode !== 220) {
-            this._onError(new Error('Invalid greeting: ' + command.data));
+            this._onError(this._formatError('Invalid greeting: ' + command.data, 'EPROTOCOL', command.statusCode));
             return;
         }
 
@@ -683,7 +697,7 @@
     SmtpClient.prototype._actionLHLO = function(command) {
         if (!command.success) {
             axe.error(DEBUG_TAG, 'LHLO not successful');
-            this._onError(new Error(command.data));
+            this._onError(this._formatError(command.data, 'EPROTOCOL', command.statusCode));
             return;
         }
 
@@ -703,7 +717,7 @@
             if (!this._secureMode && this.options.requireTLS) {
                 var errMsg = 'STARTTLS not supported without EHLO';
                 axe.error(DEBUG_TAG, errMsg);
-                this._onError(new Error(errMsg));
+                this._onError(this._formatError(errMsg, 'ETLS', command.statusCode));
                 return;
             }
 
@@ -761,11 +775,12 @@
     SmtpClient.prototype._actionSTARTTLS = function(command) {
         if (!command.success) {
             axe.error(DEBUG_TAG, 'STARTTLS not successful');
-            this._onError(new Error(command.data));
+            this._onError(this._formatError(command.data, 'ETLS', command.statusCode));
             return;
         }
 
         this._secureMode = true;
+        this.upgradeInProcess = true;
         this.socket.upgradeToSecure();
 
         // restart protocol flow
@@ -781,7 +796,7 @@
     SmtpClient.prototype._actionHELO = function(command) {
         if (!command.success) {
             axe.error(DEBUG_TAG, 'HELO not successful');
-            this._onError(new Error(command.data));
+            this._onError(this._formatError(command.data, 'EPROTOCOL', command.statusCode));
             return;
         }
         this._authenticateUser.call(this);
@@ -795,7 +810,7 @@
     SmtpClient.prototype._actionAUTH_LOGIN_USER = function(command) {
         if (command.statusCode !== 334 || command.data !== 'VXNlcm5hbWU6') {
             axe.error(DEBUG_TAG, 'AUTH LOGIN USER not successful: ' + command.data);
-            this._onError(new Error('Invalid login sequence while waiting for "334 VXNlcm5hbWU6 ": ' + command.data));
+            this._onError(this._formatError('Invalid login sequence while waiting for "334 VXNlcm5hbWU6 ": ' + command.data, 'EAUTH', command.statusCode));
             return;
         }
         axe.debug(DEBUG_TAG, 'AUTH LOGIN USER successful');
@@ -811,7 +826,7 @@
     SmtpClient.prototype._actionAUTH_LOGIN_PASS = function(command) {
         if (command.statusCode !== 334 || command.data !== 'UGFzc3dvcmQ6') {
             axe.error(DEBUG_TAG, 'AUTH LOGIN PASS not successful: ' + command.data);
-            this._onError(new Error('Invalid login sequence while waiting for "334 UGFzc3dvcmQ6 ": ' + command.data));
+            this._onError(this._formatError('Invalid login sequence while waiting for "334 UGFzc3dvcmQ6 ": ' + command.data, 'EAUTH', command.statusCode));
             return;
         }
         axe.debug(DEBUG_TAG, 'AUTH LOGIN PASS successful');
@@ -843,7 +858,7 @@
     SmtpClient.prototype._actionAUTHComplete = function(command) {
         if (!command.success) {
             axe.debug(DEBUG_TAG, 'Authentication failed: ' + command.data);
-            this._onError(new Error(command.data));
+            this._onError(this._formatError(command.data, 'EAUTH', command.statusCode, this.options.authMethod === 'XOAUTH2' ? 'needs-oauth-reauth' : 'bad-user-or-pass'));
             return;
         }
 
@@ -862,7 +877,7 @@
      */
     SmtpClient.prototype._actionIdle = function(command) {
         if (command.statusCode > 300) {
-            this._onError(new Error(command.line));
+            this._onError(this._formatError(command.line, 'EPROTOCOL', command.statusCode));
             return;
         }
 
@@ -877,12 +892,12 @@
     SmtpClient.prototype._actionMAIL = function(command) {
         if (!command.success) {
             axe.debug(DEBUG_TAG, 'MAIL FROM unsuccessful: ' + command.data);
-            this._onError(new Error(command.data));
+            this._onError(this._formatError(command.data, 'EMAILFROM', command.statusCode));
             return;
         }
 
         if (!this._envelope.rcptQueue.length) {
-            this._onError(new Error('Can\'t send mail - no recipients defined'));
+            this._onError(this._formatError('Can\'t send mail - no recipients defined', 'ERCPTLIST'));
         } else {
             axe.debug(DEBUG_TAG, 'MAIL FROM successful, proceeding with ' + this._envelope.rcptQueue.length + ' recipients');
             axe.debug(DEBUG_TAG, 'Adding recipient...');
@@ -914,7 +929,7 @@
                 axe.debug(DEBUG_TAG, 'RCPT TO done, proceeding with payload');
                 this._sendCommand('DATA');
             } else {
-                this._onError(new Error('Can\'t send mail - all recipients were rejected'));
+                this._onError(this._formatError('Can\'t send mail - all recipients were rejected', 'ERCPTLIST'));
                 this._currentAction = this._actionIdle;
                 return;
             }
@@ -935,7 +950,7 @@
     SmtpClient.prototype._actionRSET = function(command) {
         if (!command.success) {
             axe.error(DEBUG_TAG, 'RSET unsuccessful ' + command.data);
-            this._onError(new Error(command.data));
+            this._onError(this._formatError(command.data, 'EPROTOCOL', command.statusCode));
             return;
         }
 
@@ -953,7 +968,7 @@
         // some servers might use 250 instead
         if ([250, 354].indexOf(command.statusCode) < 0) {
             axe.error(DEBUG_TAG, 'DATA unsuccessful ' + command.data);
-            this._onError(new Error(command.data));
+            this._onError(this._formatError(command.data, 'EPROTOCOL', command.statusCode, 'bad-message'));
             return;
         }
 
@@ -1028,6 +1043,47 @@
         ];
         // base64("user={User}\x00auth=Bearer {Token}\x00\x00")
         return btoa(unescape(encodeURIComponent(authData.join('\x01'))));
+    };
+
+    /**
+     * Builds an Error object
+     *
+     * @param {String|Error} err Error message or error object
+     * @param {String} code Error code
+     * @returns {Error} Error object
+     */
+    SmtpClient.prototype._formatError = function(err, code, status, reason) {
+        if (!this._isError(err)) {
+            err = (err || '').toString();
+            if (!err) {
+                err = 'Error';
+            }
+            err = new Error(err);
+        }
+
+        if (code) {
+            err.code = code;
+        }
+
+        if (status) {
+            err.status = status;
+        }
+
+        if (reason) {
+            err.reason = reason;
+        }
+
+        return err;
+    };
+
+    /**
+     * Checks if a value is an Error object
+     *
+     * @param {Mixed} value Value to be checked
+     * @return {Boolean} returns true if the value is an Error
+     */
+    SmtpClient.prototype._isError = function(value) {
+        return !!Object.prototype.toString.call(value).match(/Error\]$/);
     };
 
     return SmtpClient;

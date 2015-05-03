@@ -257,7 +257,9 @@
                     data: new Error('abc')
                 });
 
-                expect(_onerrorStub.withArgs(new Error('abc')).callCount).to.equal(1);
+                var err = new Error('abc');
+
+                expect(_onerrorStub.withArgs(err).callCount).to.equal(1);
                 expect(_closeStub.callCount).to.equal(1);
 
                 _onerrorStub.restore();
@@ -393,7 +395,11 @@
                     data: 'test'
                 });
 
-                expect(_onErrorStub.withArgs(new Error('Invalid greeting: test')).callCount).to.equal(1);
+                var err = new Error('Invalid greeting: test');
+                err.code = 'EPROTOCOL';
+                err.status = 500;
+
+                expect(_onErrorStub.withArgs(err).callCount).to.equal(1);
                 _onErrorStub.restore();
             });
 
@@ -658,10 +664,15 @@
 
                 smtp._actionMAIL({
                     success: false,
-                    data: 'err'
+                    data: 'err',
+                    statusCode: 500
                 });
 
-                expect(_onErrorStub.withArgs(new Error('err')).callCount).to.equal(1);
+                var err = new Error('err');
+                err.code = 'EMAILFROM';
+                err.status = 500;
+
+                expect(_onErrorStub.withArgs(err).callCount).to.equal(1);
 
                 _onErrorStub.restore();
             });
@@ -762,10 +773,15 @@
 
                 smtp._actionRSET({
                     success: false,
-                    data: 'err'
+                    data: 'err',
+                    statusCode: 500
                 });
 
-                expect(_onErrorStub.withArgs(new Error('err')).callCount).to.equal(1);
+                var err = new Error('err');
+                err.code = 'EPROTOCOL';
+                err.status = 500;
+
+                expect(_onErrorStub.withArgs(err).callCount).to.equal(1);
 
                 _onErrorStub.restore();
             });
@@ -793,7 +809,12 @@
                     data: 'err'
                 });
 
-                expect(_onErrorStub.withArgs(new Error('err')).callCount).to.equal(1);
+                var err = new Error('err');
+                err.code = 'EPROTOCOL';
+                err.reason = 'bad-message';
+                err.status = 500;
+
+                expect(_onErrorStub.withArgs(err).callCount).to.equal(1);
 
                 _onErrorStub.restore();
             });
