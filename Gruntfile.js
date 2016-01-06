@@ -25,7 +25,7 @@ module.exports = function(grunt) {
                 options: {
                     reporter: 'spec'
                 },
-                src: ['test/integration/*.js']
+                src: ['test/unit/*-test.js', 'test/integration/*-test.js']
             }
         },
 
@@ -52,17 +52,16 @@ module.exports = function(grunt) {
                 cwd: 'node_modules/',
                 src: [
                     'arraybuffer-slice/index.js',
-                    'tcp-socket/src/*.js',
-                    'tcp-socket/node_modules/node-forge/js/forge.min.js',
-                    'wo-stringencoding/dist/stringencoding.min.js',
+                    'emailjs-tcp-socket/src/*.js',
+                    'node-forge/js/forge.min.js',
+                    'emailjs-stringencoding/src/*.js',
                     'mocha/mocha.js',
                     'mocha/mocha.css',
                     'chai/chai.js',
                     'sinon/pkg/sinon.js',
                     'requirejs/require.js',
-                    'mimefuncs/src/mimefuncs.js',
-                    'punycode/punycode.min.js',
-                    'axe-logger/axe.js'
+                    'emailjs-mime-codec/src/*.js',
+                    'punycode/punycode.min.js'
                 ],
                 dest: 'test/lib/',
                 rename: function(dest, src) {
@@ -87,17 +86,16 @@ module.exports = function(grunt) {
                 flatten: true,
                 cwd: 'node_modules/',
                 src: [
-                    'tcp-socket/src/*.js',
-                    'tcp-socket/node_modules/node-forge/js/forge.min.js',
-                    'wo-stringencoding/dist/stringencoding.min.js',
+                    'emailjs-tcp-socket/src/*.js',
+                    'node-forge/js/forge.min.js',
+                    'emailjs-stringencoding/src/*.js',
                     'mocha/mocha.js',
                     'mocha/mocha.css',
                     'chai/chai.js',
                     'sinon/pkg/sinon.js',
                     'requirejs/require.js',
-                    'mimefuncs/src/mimefuncs.js',
-                    'punycode/punycode.min.js',
-                    'axe-logger/axe.js'
+                    'emailjs-mime-codec/src/*.js',
+                    'punycode/punycode.min.js'
                 ],
                 dest: 'test/chrome/lib/'
             },

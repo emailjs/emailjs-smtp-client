@@ -2,13 +2,13 @@
 
 (function(factory) {
     if (typeof define === 'function' && define.amd) {
-        define(['chai', '../../src/smtpclient-response-parser'], factory.bind(null, sinon));
+        define(['chai', '../../src/emailjs-smtp-client-response-parser'], factory.bind(null, sinon));
     } else if (typeof exports === 'object') {
-        module.exports = factory(require('chai'), require('sinon'), require('../../src/smtpclient-response-parser'));
+        module.exports = factory(require('sinon'), require('chai'), require('../../src/emailjs-smtp-client-response-parser'));
     }
 }(function(sinon, chai, SmtpResponseParser) {
     var expect = chai.expect;
-    chai.Assertion.includeStack = true;
+    chai.config.includeStack = true;
 
     describe('smtpclient response parser unit tests', function() {
         var parser;

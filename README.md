@@ -2,29 +2,29 @@
 
 SMTP Client allows you to connect to and stream data to a SMTP server in the browser.
 
-[![Build Status](https://travis-ci.org/whiteout-io/smtpclient.png?branch=master)](https://travis-ci.org/whiteout-io/smtpclient)
+[![Build Status](https://travis-ci.org/emailjs/emailjs-smtp-client.png?branch=master)](https://travis-ci.org/emailjs/emailjs-smtp-client)
 
 ## StringEncoding API
 
-This module requires `TextEncoder` and `TextDecoder` to exist as part of the StringEncoding API (see: [MDN](https://developer.mozilla.org/en-US/docs/WebAPI/Encoding_API) [whatwg.org](http://encoding.spec.whatwg.org/#api)). Firefox 19+ is basically the only browser that supports this at the time of writing, while [Chromium in canary, not stable](https://code.google.com/p/chromium/issues/detail?id=243354). Luckily, [there is a polyfill](https://github.com/whiteout-io/stringencoding)!
+This module requires `TextEncoder` and `TextDecoder` to exist as part of the StringEncoding API (see: [MDN](https://developer.mozilla.org/en-US/docs/WebAPI/Encoding_API) [whatwg.org](http://encoding.spec.whatwg.org/#api)). Firefox 19+ is basically the only browser that supports this at the time of writing, while [Chromium in canary, not stable](https://code.google.com/p/chromium/issues/detail?id=243354). Luckily, [there is a polyfill](https://github.com/emailjs/emailjs-stringencoding)!
 
 Depending on your browser, you might need [this polyfill for ArrayBuffer #slice](https://github.com/ttaubert/node-arraybuffer-slice), e.g. phantomjs.
 
 ## TCPSocket API
 
-There is a [shim](https://github.com/whiteout-io/tcp-socket) that brings [Mozilla-flavored](https://developer.mozilla.org/en-US/docs/WebAPI/TCP_Socket) version of the [Raw Socket API](http://www.w3.org/TR/raw-sockets/) to other platforms.
+There is a [shim](https://github.com/emailjs/emailjs-tcp-socket) that brings [Mozilla-flavored](https://developer.mozilla.org/en-US/docs/WebAPI/TCP_Socket) version of the [Raw Socket API](http://www.w3.org/TR/raw-sockets/) to other platforms.
 
 If you are on a platform that uses forge instead of a native TLS implementation (e.g. chrome.socket), you have to set the .oncert(pemEncodedCertificate) handler that passes the TLS certificate that the server presents. It can be used on a trust-on-first-use basis for subsequent connection.
 
 If forge is used to handle TLS traffic, you may choose to handle the TLS-related load in a Web Worker. Please use tlsWorkerPath to point to `tcp-socket-tls-worker.js`!
 
-Please take a look at the [tcp-socket documentation](https://github.com/whiteout-io/tcp-socket) for more information!
+Please take a look at the [tcp-socket documentation](https://github.com/emailjs/emailjs-tcp-socket) for more information!
 
 ## Installation
 
 ### [npm](https://www.npmjs.org/):
 
-    npm install --save wo-smtpclient
+    npm install --save emailjs-smtp-client
 
 ## Quirks
 
@@ -35,18 +35,18 @@ Please take a look at the [tcp-socket documentation](https://github.com/whiteout
 
 ### AMD
 
-Require [smtpclient.js](src/smtpclient.js) as `smtpclient`
+Require [emailjs-smtp-client.js](src/emailjs-smtp-client.js) as `emailjs-smtp-client`
 
 ### Global context
 
-Include files [smtpclient-response-parser.js](src/smtpclient-response-parser.js) and [smtpclient.js](src/smtpclient.js) on the page.
+Include files [emailjs-smtp-client-response-parser.js](src/emailjs-smtp-client-response-parser.js) and [emailjs-smtp-client.js](src/emailjs-smtp-client.js) on the page.
 
 ```html
-<script src="smtpclient-response-parser.js"></script>
-<script src="smtpclient.js"></script>
+<script src="emailjs-smtp-client-response-parser.js"></script>
+<script src="emailjs-smtp-client.js"></script>
 ```
 
-This exposes global variable `SmtpClient`
+This exposes global variable `emailjs-smtp-client`
 
 ## API
 
@@ -73,8 +73,8 @@ The following connection options can be used with `simplesmtp.connect`:
     * **pass** is the password for the user if plain auth is used
     * **xoauth2** is the OAuth2 access token to be used instead of password. If both password and xoauth2 token are set, the token is preferred.
   * **authMethod** *String* Force specific authentication method (eg. `"PLAIN"` for using `AUTH PLAIN` or `"XOAUTH2"` for `AUTH XOAUTH2`)
-  * **ca** (optional) (only in conjunction with this [TCPSocket shim](https://github.com/whiteout-io/tcp-socket)) if you use TLS with forge, pin a PEM-encoded certificate as a string. Please refer to the [tcp-socket documentation](https://github.com/whiteout-io/tcp-socket) for more information!
-  * **tlsWorkerPath** (optional) (only in conjunction with this [TCPSocket shim](https://github.com/whiteout-io/tcp-socket)) if you use TLS with forge, this path indicates where the file for the TLS Web Worker is located. Please refer to the [tcp-socket documentation](https://github.com/whiteout-io/tcp-socket) for more information!
+  * **ca** (optional) (only in conjunction with this [TCPSocket shim](https://github.com/emailjs/emailjs-tcp-socket)) if you use TLS with forge, pin a PEM-encoded certificate as a string. Please refer to the [tcp-socket documentation](https://github.com/emailjs/emailjs-tcp-socket) for more information!
+  * **tlsWorkerPath** (optional) (only in conjunction with this [TCPSocket shim](https://github.com/emailjs/emailjs-tcp-socket)) if you use TLS with forge, this path indicates where the file for the TLS Web Worker is located. Please refer to the [tcp-socket documentation](https://github.com/emailjs/emailjs-tcp-socket) for more information!
   * **disableEscaping** *Boolean* If set to true, do not escape dots on the beginning of the lines
   * **logLength** *Number* How many messages between the client and the server to log. Set to false to disable logging. Defaults to 6
   * **ignoreTLS** – if set to true, do not issue STARTTLS even if the server supports it

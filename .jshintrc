@@ -17,6 +17,7 @@
     "trailing": true,
     "undef": true,
     "unused": true,
+    "esnext": true,
 
     "globals": {
         "sinon": true,

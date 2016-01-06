@@ -2,13 +2,13 @@
 
 (function(factory) {
     if (typeof define === 'function' && define.amd) {
-        define(['chai', 'axe', 'smtpclient'], factory.bind(null, sinon));
+        define(['chai', 'emailjs-smtp-client'], factory.bind(null, sinon));
     } else if (typeof exports === 'object') {
-        module.exports = factory(require('sinon'), require('chai'), require('axe-logger'), require('../../src/smtpclient'));
+        module.exports = factory(require('sinon'), require('chai'), require('../../src/emailjs-smtp-client'));
     }
-}(function(sinon, chai, axe, SmtpClient) {
+}(function(sinon, chai, SmtpClient) {
     var expect = chai.expect;
-    chai.Assertion.includeStack = true;
+    chai.config.includeStack = true;
 
     describe('smtpclient unit tests', function() {
         var smtp;
@@ -17,8 +17,6 @@
         var TCPSocket;
 
         beforeEach(function() {
-            axe.removeAppender(axe.defaultAppender);
-
             host = '127.0.0.1',
                 port = 10000,
                 options = {
@@ -27,6 +25,7 @@
                 };
 
             smtp = new SmtpClient(host, port, options);
+            smtp.logLevel = smtp.LOG_LEVEL_NONE;
             expect(smtp).to.exist;
 
             TCPSocket = smtp._TCPSocket = function() {};

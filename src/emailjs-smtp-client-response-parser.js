@@ -26,7 +26,7 @@
     } else if (typeof exports === 'object') {
         module.exports = factory();
     } else {
-        root.SmtpClientResponseParser = factory();
+        root['emailjs-smtp-client-response-parser'] = factory();
     }
 }(this, function() {
     'use strict';

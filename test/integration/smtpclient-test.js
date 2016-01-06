@@ -1,21 +1,18 @@
 'use strict';
 
-var SmtpClient = require('../../src/smtpclient'),
+var SmtpClient = require('../../src/emailjs-smtp-client'),
     simplesmtp = require('simplesmtp'),
     chai = require('chai'),
-    axe = require('axe-logger'),
     expect = chai.expect;
 
 describe('smtpclient node integration tests', function() {
-    chai.Assertion.includeStack = true;
+    chai.config.includeStack = true;
     process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
     var smtp, port = 10001,
         server;
 
     before(function(done) {
-        axe.removeAppender(axe.defaultAppender);
-
         // start smtp test server
         var options = {
             debug: false,
@@ -46,6 +43,7 @@ describe('smtpclient node integration tests', function() {
         smtp = new SmtpClient('127.0.0.1', port, {
             useSecureTransport: false
         });
+        smtp.logLevel = smtp.LOG_LEVEL_NONE;
         expect(smtp).to.exist;
 
         smtp.connect();
@@ -241,6 +239,7 @@ describe('smtpclient authentication tests', function() {
                 pass: 'def'
             }
         });
+        smtp.logLevel = smtp.LOG_LEVEL_NONE;
         expect(smtp).to.exist;
 
         smtp.connect();
@@ -259,6 +258,7 @@ describe('smtpclient authentication tests', function() {
             },
             authMethod: 'LOGIN'
         });
+        smtp.logLevel = smtp.LOG_LEVEL_NONE;
         expect(smtp).to.exist;
 
         smtp.connect();
@@ -277,6 +277,7 @@ describe('smtpclient authentication tests', function() {
             },
             authMethod: 'LOGIN'
         });
+        smtp.logLevel = smtp.LOG_LEVEL_NONE;
         expect(smtp).to.exist;
 
         smtp.connect();
@@ -293,6 +294,7 @@ describe('smtpclient authentication tests', function() {
                 xoauth2: 'def'
             }
         });
+        smtp.logLevel = smtp.LOG_LEVEL_NONE;
         expect(smtp).to.exist;
 
         smtp.connect();
@@ -328,6 +330,7 @@ describe('smtpclient authentication tests', function() {
                 xoauth2: 'ghi'
             }
         });
+        smtp.logLevel = smtp.LOG_LEVEL_NONE;
         expect(smtp).to.exist;
 
         smtp.connect();
@@ -381,6 +384,7 @@ describe('smtpclient STARTTLS tests', function() {
                 },
                 ignoreTLS: true
             });
+            smtp.logLevel = smtp.LOG_LEVEL_NONE;
             expect(smtp).to.exist;
 
             smtp.connect();
@@ -399,6 +403,7 @@ describe('smtpclient STARTTLS tests', function() {
                     pass: 'def'
                 }
             });
+            smtp.logLevel = smtp.LOG_LEVEL_NONE;
             expect(smtp).to.exist;
 
             smtp.connect();
@@ -449,6 +454,7 @@ describe('smtpclient STARTTLS tests', function() {
                     pass: 'def'
                 }
             });
+            smtp.logLevel = smtp.LOG_LEVEL_NONE;
             expect(smtp).to.exist;
 
             smtp.connect();
@@ -468,6 +474,7 @@ describe('smtpclient STARTTLS tests', function() {
                 },
                 requireTLS: true
             });
+            smtp.logLevel = smtp.LOG_LEVEL_NONE;
             expect(smtp).to.exist;
 
             smtp.connect();
@@ -522,6 +529,7 @@ describe('smtpclient STARTTLS tests', function() {
                 },
                 requireTLS: true
             });
+            smtp.logLevel = smtp.LOG_LEVEL_NONE;
             expect(smtp).to.exist;
 
             smtp.connect();

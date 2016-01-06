@@ -4,8 +4,7 @@ require.config({
     baseUrl: '../lib',
     paths: {
         'test': '..',
-        'forge': 'forge.min',
-        'stringencoding': 'stringencoding.min'
+        'forge': 'forge.min'
     }
 });
 

@@ -25,26 +25,25 @@
 
     if (typeof define === 'function' && define.amd) {
         // AMD in browser environment
-        define(['tcp-socket', 'stringencoding', 'axe', './smtpclient-response-parser'], function(TCPSocket, encoding, axe, SmtpClientResponseParser) {
-            return factory(TCPSocket, encoding.TextEncoder, encoding.TextDecoder, axe, SmtpClientResponseParser, window.btoa);
+        define(['emailjs-tcp-socket', 'emailjs-stringencoding', 'emailjs-smtp-client-response-parser'], function(TCPSocket, encoding, SmtpClientResponseParser) {
+            return factory(TCPSocket, encoding.TextEncoder, encoding.TextDecoder, SmtpClientResponseParser, window.btoa);
         });
     } else if (typeof exports === 'object' && typeof navigator !== 'undefined') {
         // common.js in browser environment
-        encoding = require('wo-stringencoding');
-        module.exports = factory(require('tcp-socket'), encoding.TextEncoder, encoding.TextDecoder, require('axe-logger'), require('./smtpclient-response-parser'), btoa);
+        encoding = require('emailjs-stringencoding');
+        module.exports = factory(require('emailjs-tcp-socket'), encoding.TextEncoder, encoding.TextDecoder, require('./emailjs-smtp-client-response-parser'), btoa);
     } else if (typeof exports === 'object') {
         // node.js
-        encoding = require('wo-stringencoding');
-        module.exports = factory(require('tcp-socket'), encoding.TextEncoder, encoding.TextDecoder, require('axe-logger'), require('./smtpclient-response-parser'), function(str) {
+        encoding = require('emailjs-stringencoding');
+        module.exports = factory(require('emailjs-tcp-socket'), encoding.TextEncoder, encoding.TextDecoder, require('./emailjs-smtp-client-response-parser'), function(str) {
             var NodeBuffer = require('buffer').Buffer;
             return new NodeBuffer(str, 'binary').toString("base64");
         });
     } else {
         // browser global
-        navigator.TCPSocket = navigator.TCPSocket || navigator.mozTCPSocket;
-        root.SmtpClient = factory(navigator.TCPSocket, root.TextEncoder, root.TextDecoder, root.axe, root.SmtpClientResponseParser, window.btoa);
+        root['emailjs-smtp-client'] = factory(navigator.TCPSocket, root.TextEncoder, root.TextDecoder, root['emailjs-smtp-client-response-parser'], window.btoa);
     }
-}(this, function(TCPSocket, TextEncoder, TextDecoder, axe, SmtpClientResponseParser, btoa) {
+}(this, function(TCPSocket, TextEncoder, TextDecoder, SmtpClientResponseParser, btoa) {
     'use strict';
 
     var DEBUG_TAG = 'SMTP Client';
@@ -176,6 +175,10 @@
          * Timeout for sending in data mode, gets extended with every send()
          */
         this._socketTimeoutPeriod = false;
+
+        // Activate logging
+        this.createLogger();
+        this.logLevel = this.LOG_LEVEL_ALL;
     }
 
     //
@@ -293,7 +296,7 @@
      * Sends QUIT
      */
     SmtpClient.prototype.quit = function() {
-        axe.debug(DEBUG_TAG, 'Sending QUIT...');
+        this.logger.debug(DEBUG_TAG, 'Sending QUIT...');
         this._sendCommand('QUIT');
         this._currentAction = this.close;
     };
@@ -305,7 +308,7 @@
      */
     SmtpClient.prototype.reset = function(auth) {
         this.options.auth = auth || this.options.auth;
-        axe.debug(DEBUG_TAG, 'Sending RSET...');
+        this.logger.debug(DEBUG_TAG, 'Sending RSET...');
         this._sendCommand('RSET');
         this._currentAction = this._actionRSET;
     };
@@ -314,7 +317,7 @@
      * Closes the connection to the server
      */
     SmtpClient.prototype.close = function() {
-        axe.debug(DEBUG_TAG, 'Closing connection...');
+        this.logger.debug(DEBUG_TAG, 'Closing connection...');
         if (this.socket && this.socket.readyState === 'open') {
             this.socket.close();
         } else {
@@ -341,7 +344,7 @@
         this._envelope.responseQueue = [];
 
         this._currentAction = this._actionMAIL;
-        axe.debug(DEBUG_TAG, 'Sending MAIL FROM...');
+        this.logger.debug(DEBUG_TAG, 'Sending MAIL FROM...');
         this._sendCommand('MAIL FROM:<' + (this._envelope.from) + '>');
     };
 
@@ -441,7 +444,7 @@
     SmtpClient.prototype._onData = function(evt) {
         clearTimeout(this._socketTimeoutTimer);
         var stringPayload = new TextDecoder('UTF-8').decode(new Uint8Array(evt.data));
-        axe.debug(DEBUG_TAG, 'SERVER: ' + stringPayload);
+        this.logger.debug(DEBUG_TAG, 'SERVER: ' + stringPayload);
         this._parser.send(stringPayload);
     };
 
@@ -464,13 +467,13 @@
      */
     SmtpClient.prototype._onError = function(evt) {
         if (evt instanceof Error && evt.message) {
-            axe.error(DEBUG_TAG, evt);
+            this.logger.error(DEBUG_TAG, evt);
             this.onerror(evt);
         } else if (evt && evt.data instanceof Error) {
-            axe.error(DEBUG_TAG, evt.data);
+            this.logger.error(DEBUG_TAG, evt.data);
             this.onerror(evt.data);
         } else {
-            axe.error(DEBUG_TAG, new Error(evt && evt.data && evt.data.message || evt.data || evt || 'Error'));
+            this.logger.error(DEBUG_TAG, new Error(evt && evt.data && evt.data.message || evt.data || evt || 'Error'));
             this.onerror(new Error(evt && evt.data && evt.data.message || evt.data || evt || 'Error'));
         }
 
@@ -484,7 +487,7 @@
      * @param {Event} evt Event object. Not used
      */
     SmtpClient.prototype._onClose = function() {
-        axe.debug(DEBUG_TAG, 'Socket closed.');
+        this.logger.debug(DEBUG_TAG, 'Socket closed.');
         this._destroy();
     };
 
@@ -542,7 +545,7 @@
             this._lastDataBytes = this._lastDataBytes.substr(-1) + chunk;
         }
 
-        axe.debug(DEBUG_TAG, 'Sending ' + chunk.length + ' bytes of payload');
+        this.logger.debug(DEBUG_TAG, 'Sending ' + chunk.length + ' bytes of payload');
 
         // pass the chunk to the socket
         this.waitDrain = this._send(new TextEncoder('UTF-8').encode(chunk).buffer);
@@ -620,14 +623,14 @@
                 // C: AUTH LOGIN
                 // C: BASE64(USER)
                 // C: BASE64(PASS)
-                axe.debug(DEBUG_TAG, 'Authentication via AUTH LOGIN');
+                this.logger.debug(DEBUG_TAG, 'Authentication via AUTH LOGIN');
                 this._currentAction = this._actionAUTH_LOGIN_USER;
                 this._sendCommand('AUTH LOGIN');
                 return;
             case 'PLAIN':
                 // AUTH PLAIN is a 1 step authentication process
                 // C: AUTH PLAIN BASE64(\0 USER \0 PASS)
-                axe.debug(DEBUG_TAG, 'Authentication via AUTH PLAIN');
+                this.logger.debug(DEBUG_TAG, 'Authentication via AUTH PLAIN');
                 this._currentAction = this._actionAUTHComplete;
                 this._sendCommand(
                     // convert to BASE64
@@ -640,7 +643,7 @@
                 return;
             case 'XOAUTH2':
                 // See https://developers.google.com/gmail/xoauth2_protocol#smtp_protocol_exchange
-                axe.debug(DEBUG_TAG, 'Authentication via AUTH XOAUTH2');
+                this.logger.debug(DEBUG_TAG, 'Authentication via AUTH XOAUTH2');
                 this._currentAction = this._actionAUTH_XOAUTH2;
                 this._sendCommand('AUTH XOAUTH2 ' + this._buildXOAuth2Token(this.options.auth.user, this.options.auth.xoauth2));
                 return;
@@ -663,12 +666,12 @@
         }
 
         if (this.options.lmtp) {
-            axe.debug(DEBUG_TAG, 'Sending LHLO ' + this.options.name);
+            this.logger.debug(DEBUG_TAG, 'Sending LHLO ' + this.options.name);
 
             this._currentAction = this._actionLHLO;
             this._sendCommand('LHLO ' + this.options.name);
         } else {
-            axe.debug(DEBUG_TAG, 'Sending EHLO ' + this.options.name);
+            this.logger.debug(DEBUG_TAG, 'Sending EHLO ' + this.options.name);
 
             this._currentAction = this._actionEHLO;
             this._sendCommand('EHLO ' + this.options.name);
@@ -682,7 +685,7 @@
      */
     SmtpClient.prototype._actionLHLO = function(command) {
         if (!command.success) {
-            axe.error(DEBUG_TAG, 'LHLO not successful');
+            this.logger.error(DEBUG_TAG, 'LHLO not successful');
             this._onError(new Error(command.data));
             return;
         }
@@ -702,13 +705,13 @@
         if (!command.success) {
             if (!this._secureMode && this.options.requireTLS) {
                 var errMsg = 'STARTTLS not supported without EHLO';
-                axe.error(DEBUG_TAG, errMsg);
+                this.logger.error(DEBUG_TAG, errMsg);
                 this._onError(new Error(errMsg));
                 return;
             }
 
             // Try HELO instead
-            axe.warn(DEBUG_TAG, 'EHLO not successful, trying HELO ' + this.options.name);
+            this.logger.warn(DEBUG_TAG, 'EHLO not successful, trying HELO ' + this.options.name);
             this._currentAction = this._actionHELO;
             this._sendCommand('HELO ' + this.options.name);
             return;
@@ -716,33 +719,33 @@
 
         // Detect if the server supports PLAIN auth
         if (command.line.match(/AUTH(?:\s+[^\n]*\s+|\s+)PLAIN/i)) {
-            axe.debug(DEBUG_TAG, 'Server supports AUTH PLAIN');
+            this.logger.debug(DEBUG_TAG, 'Server supports AUTH PLAIN');
             this._supportedAuth.push('PLAIN');
         }
 
         // Detect if the server supports LOGIN auth
         if (command.line.match(/AUTH(?:\s+[^\n]*\s+|\s+)LOGIN/i)) {
-            axe.debug(DEBUG_TAG, 'Server supports AUTH LOGIN');
+            this.logger.debug(DEBUG_TAG, 'Server supports AUTH LOGIN');
             this._supportedAuth.push('LOGIN');
         }
 
         // Detect if the server supports XOAUTH2 auth
         if (command.line.match(/AUTH(?:\s+[^\n]*\s+|\s+)XOAUTH2/i)) {
-            axe.debug(DEBUG_TAG, 'Server supports AUTH XOAUTH2');
+            this.logger.debug(DEBUG_TAG, 'Server supports AUTH XOAUTH2');
             this._supportedAuth.push('XOAUTH2');
         }
 
         // Detect maximum allowed message size
         if ((match = command.line.match(/SIZE (\d+)/i)) && Number(match[1])) {
             this._maxAllowedSize = Number(match[1]);
-            axe.debug(DEBUG_TAG, 'Maximum allowd message size: ' + this._maxAllowedSize);
+            this.logger.debug(DEBUG_TAG, 'Maximum allowd message size: ' + this._maxAllowedSize);
         }
 
         // Detect if the server supports STARTTLS
         if (!this._secureMode) {
             if (command.line.match(/[ \-]STARTTLS\s?$/mi) && !this.options.ignoreTLS || !!this.options.requireTLS) {
                 this._currentAction = this._actionSTARTTLS;
-                axe.debug(DEBUG_TAG, 'Sending STARTTLS');
+                this.logger.debug(DEBUG_TAG, 'Sending STARTTLS');
                 this._sendCommand('STARTTLS');
                 return;
             }
@@ -760,7 +763,7 @@
      */
     SmtpClient.prototype._actionSTARTTLS = function(command) {
         if (!command.success) {
-            axe.error(DEBUG_TAG, 'STARTTLS not successful');
+            this.logger.error(DEBUG_TAG, 'STARTTLS not successful');
             this._onError(new Error(command.data));
             return;
         }
@@ -780,7 +783,7 @@
      */
     SmtpClient.prototype._actionHELO = function(command) {
         if (!command.success) {
-            axe.error(DEBUG_TAG, 'HELO not successful');
+            this.logger.error(DEBUG_TAG, 'HELO not successful');
             this._onError(new Error(command.data));
             return;
         }
@@ -794,11 +797,11 @@
      */
     SmtpClient.prototype._actionAUTH_LOGIN_USER = function(command) {
         if (command.statusCode !== 334 || command.data !== 'VXNlcm5hbWU6') {
-            axe.error(DEBUG_TAG, 'AUTH LOGIN USER not successful: ' + command.data);
+            this.logger.error(DEBUG_TAG, 'AUTH LOGIN USER not successful: ' + command.data);
             this._onError(new Error('Invalid login sequence while waiting for "334 VXNlcm5hbWU6 ": ' + command.data));
             return;
         }
-        axe.debug(DEBUG_TAG, 'AUTH LOGIN USER successful');
+        this.logger.debug(DEBUG_TAG, 'AUTH LOGIN USER successful');
         this._currentAction = this._actionAUTH_LOGIN_PASS;
         this._sendCommand(btoa(unescape(encodeURIComponent(this.options.auth.user))));
     };
@@ -810,11 +813,11 @@
      */
     SmtpClient.prototype._actionAUTH_LOGIN_PASS = function(command) {
         if (command.statusCode !== 334 || command.data !== 'UGFzc3dvcmQ6') {
-            axe.error(DEBUG_TAG, 'AUTH LOGIN PASS not successful: ' + command.data);
+            this.logger.error(DEBUG_TAG, 'AUTH LOGIN PASS not successful: ' + command.data);
             this._onError(new Error('Invalid login sequence while waiting for "334 UGFzc3dvcmQ6 ": ' + command.data));
             return;
         }
-        axe.debug(DEBUG_TAG, 'AUTH LOGIN PASS successful');
+        this.logger.debug(DEBUG_TAG, 'AUTH LOGIN PASS successful');
         this._currentAction = this._actionAUTHComplete;
         this._sendCommand(btoa(unescape(encodeURIComponent(this.options.auth.pass))));
     };
@@ -826,7 +829,7 @@
      */
     SmtpClient.prototype._actionAUTH_XOAUTH2 = function(command) {
         if (!command.success) {
-            axe.warn(DEBUG_TAG, 'Error during AUTH XOAUTH2, sending empty response');
+            this.logger.warn(DEBUG_TAG, 'Error during AUTH XOAUTH2, sending empty response');
             this._sendCommand('');
             this._currentAction = this._actionAUTHComplete;
         } else {
@@ -842,12 +845,12 @@
      */
     SmtpClient.prototype._actionAUTHComplete = function(command) {
         if (!command.success) {
-            axe.debug(DEBUG_TAG, 'Authentication failed: ' + command.data);
+            this.logger.debug(DEBUG_TAG, 'Authentication failed: ' + command.data);
             this._onError(new Error(command.data));
             return;
         }
 
-        axe.debug(DEBUG_TAG, 'Authentication successful.');
+        this.logger.debug(DEBUG_TAG, 'Authentication successful.');
 
         this._authenticatedAs = this.options.auth.user;
 
@@ -876,7 +879,7 @@
      */
     SmtpClient.prototype._actionMAIL = function(command) {
         if (!command.success) {
-            axe.debug(DEBUG_TAG, 'MAIL FROM unsuccessful: ' + command.data);
+            this.logger.debug(DEBUG_TAG, 'MAIL FROM unsuccessful: ' + command.data);
             this._onError(new Error(command.data));
             return;
         }
@@ -884,8 +887,8 @@
         if (!this._envelope.rcptQueue.length) {
             this._onError(new Error('Can\'t send mail - no recipients defined'));
         } else {
-            axe.debug(DEBUG_TAG, 'MAIL FROM successful, proceeding with ' + this._envelope.rcptQueue.length + ' recipients');
-            axe.debug(DEBUG_TAG, 'Adding recipient...');
+            this.logger.debug(DEBUG_TAG, 'MAIL FROM successful, proceeding with ' + this._envelope.rcptQueue.length + ' recipients');
+            this.logger.debug(DEBUG_TAG, 'Adding recipient...');
             this._envelope.curRecipient = this._envelope.rcptQueue.shift();
             this._currentAction = this._actionRCPT;
             this._sendCommand('RCPT TO:<' + this._envelope.curRecipient + '>');
@@ -901,7 +904,7 @@
      */
     SmtpClient.prototype._actionRCPT = function(command) {
         if (!command.success) {
-            axe.warn(DEBUG_TAG, 'RCPT TO failed for: ' + this._envelope.curRecipient);
+            this.logger.warn(DEBUG_TAG, 'RCPT TO failed for: ' + this._envelope.curRecipient);
             // this is a soft error
             this._envelope.rcptFailed.push(this._envelope.curRecipient);
         } else {
@@ -911,7 +914,7 @@
         if (!this._envelope.rcptQueue.length) {
             if (this._envelope.rcptFailed.length < this._envelope.to.length) {
                 this._currentAction = this._actionDATA;
-                axe.debug(DEBUG_TAG, 'RCPT TO done, proceeding with payload');
+                this.logger.debug(DEBUG_TAG, 'RCPT TO done, proceeding with payload');
                 this._sendCommand('DATA');
             } else {
                 this._onError(new Error('Can\'t send mail - all recipients were rejected'));
@@ -919,7 +922,7 @@
                 return;
             }
         } else {
-            axe.debug(DEBUG_TAG, 'Adding recipient...');
+            this.logger.debug(DEBUG_TAG, 'Adding recipient...');
             this._envelope.curRecipient = this._envelope.rcptQueue.shift();
             this._currentAction = this._actionRCPT;
             this._sendCommand('RCPT TO:<' + this._envelope.curRecipient + '>');
@@ -934,7 +937,7 @@
      */
     SmtpClient.prototype._actionRSET = function(command) {
         if (!command.success) {
-            axe.error(DEBUG_TAG, 'RSET unsuccessful ' + command.data);
+            this.logger.error(DEBUG_TAG, 'RSET unsuccessful ' + command.data);
             this._onError(new Error(command.data));
             return;
         }
@@ -952,7 +955,7 @@
         // response should be 354 but according to this issue https://github.com/eleith/emailjs/issues/24
         // some servers might use 250 instead
         if ([250, 354].indexOf(command.statusCode) < 0) {
-            axe.error(DEBUG_TAG, 'DATA unsuccessful ' + command.data);
+            this.logger.error(DEBUG_TAG, 'DATA unsuccessful ' + command.data);
             this._onError(new Error(command.data));
             return;
         }
@@ -977,10 +980,10 @@
 
             rcpt = this._envelope.responseQueue.shift();
             if (!command.success) {
-                axe.error(DEBUG_TAG, 'Local delivery to ' + rcpt + ' failed.');
+                this.logger.error(DEBUG_TAG, 'Local delivery to ' + rcpt + ' failed.');
                 this._envelope.rcptFailed.push(rcpt);
             } else {
-                axe.error(DEBUG_TAG, 'Local delivery to ' + rcpt + ' succeeded.');
+                this.logger.error(DEBUG_TAG, 'Local delivery to ' + rcpt + ' succeeded.');
             }
 
             if (this._envelope.responseQueue.length) {
@@ -995,9 +998,9 @@
             // about individual recipients
 
             if (!command.success) {
-                axe.error(DEBUG_TAG, 'Message sending failed.');
+                this.logger.error(DEBUG_TAG, 'Message sending failed.');
             } else {
-                axe.debug(DEBUG_TAG, 'Message sent successfully.');
+                this.logger.debug(DEBUG_TAG, 'Message sent successfully.');
             }
 
             this._currentAction = this._actionIdle;
@@ -1007,7 +1010,7 @@
         // If the client wanted to do something else (eg. to quit), do not force idle
         if (this._currentAction === this._actionIdle) {
             // Waiting for new connections
-            axe.debug(DEBUG_TAG, 'Idling while waiting for new connections...');
+            this.logger.debug(DEBUG_TAG, 'Idling while waiting for new connections...');
             this.onidle();
         }
     };
@@ -1028,6 +1031,72 @@
         ];
         // base64("user={User}\x00auth=Bearer {Token}\x00\x00")
         return btoa(unescape(encodeURIComponent(authData.join('\x01'))));
+    };
+
+    SmtpClient.prototype.LOG_LEVEL_NONE = 1000;
+    SmtpClient.prototype.LOG_LEVEL_ERROR = 40;
+    SmtpClient.prototype.LOG_LEVEL_WARN = 30;
+    SmtpClient.prototype.LOG_LEVEL_INFO = 20;
+    SmtpClient.prototype.LOG_LEVEL_DEBUG = 10;
+    SmtpClient.prototype.LOG_LEVEL_ALL = 0;
+
+    SmtpClient.prototype.createLogger = function() {
+        var self = this;
+        var createLogger = function (tag) {
+            var log = function(level, messages) {
+                messages.map(function(message) {
+                    try {
+                        return typeof message.toString === 'function' ? message.toString() : JSON.stringify(message);
+                    } catch (e) {
+                        return message; // use JS builtin interpolation
+                    }
+                });
+
+                var logMessage = '[' + new Date().toISOString() + '][' + tag + '] ' + messages.join(' ');
+                if (level === self.LOG_LEVEL_DEBUG) {
+                   console.log('[DEBUG]' + logMessage);
+                } else if (level === self.LOG_LEVEL_INFO) {
+                   console.info('[INFO]' + logMessage);
+                } else if (level === self.LOG_LEVEL_WARN) {
+                   console.warn('[WARN]' + logMessage);
+                } else if (level === self.LOG_LEVEL_ERROR) {
+                   console.error('[ERROR]' + logMessage);
+                }
+            };
+
+            return {
+                // this could become way nicer when node supports the rest operator...
+                debug: function(msgs){ log(self.LOG_LEVEL_DEBUG, msgs); }.bind(self),
+                info: function(msgs){ log(self.LOG_LEVEL_INFO, msgs); }.bind(self),
+                warn: function(msgs){ log(self.LOG_LEVEL_WARN, msgs); }.bind(self),
+                error: function(msgs){ log(self.LOG_LEVEL_ERROR, msgs); }.bind(self)
+            };
+        };
+
+        var logger = this.options.logger || createLogger(this.logLevel, "SmtpClient");
+        this.logger = {
+            // this could become way nicer when node supports the rest operator...
+            debug: function() {
+                if (this.LOG_LEVEL_DEBUG >= this.logLevel) {
+                    logger.debug(Array.prototype.slice.call(arguments));
+                }
+            }.bind(this),
+            info: function() {
+                if (this.LOG_LEVEL_INFO >= this.logLevel) {
+                    logger.info(Array.prototype.slice.call(arguments));
+                }
+            }.bind(this),
+            warn: function() {
+                if (this.LOG_LEVEL_WARN >= this.logLevel) {
+                    logger.warn(Array.prototype.slice.call(arguments));
+                }
+            }.bind(this),
+            error: function() {
+                if (this.LOG_LEVEL_ERROR >= this.logLevel) {
+                    logger.error(Array.prototype.slice.call(arguments));
+                }
+            }.bind(this)
+        };
     };
 
     return SmtpClient;
