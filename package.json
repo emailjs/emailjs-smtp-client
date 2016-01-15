@@ -9,7 +9,7 @@
   ],
   "license": "MIT",
   "scripts": {
-    "pretest": "dir=$(pwd) && cd node_modules/node-forge/ && npm install && npm run minify && cd $dir",
+    "pretest": "dir=$(pwd) && cd node_modules/emailjs-tcp-socket/node_modules/node-forge/ && npm install && npm run minify && cd $dir",
     "test": "grunt"
   },
   "repository": {

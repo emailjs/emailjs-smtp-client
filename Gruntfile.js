@@ -53,7 +53,7 @@ module.exports = function(grunt) {
                 src: [
                     'arraybuffer-slice/index.js',
                     'emailjs-tcp-socket/src/*.js',
-                    'node-forge/js/forge.min.js',
+                    'emailjs-tcp-socket/node_modules/node-forge/js/forge.min.js',
                     'emailjs-stringencoding/src/*.js',
                     'mocha/mocha.js',
                     'mocha/mocha.css',
