@@ -1,4 +1,4 @@
-define(['chai', 'smtpclient'], function(chai, SmtpClient) {
+define(['chai', 'emailjs-smtp-client'], function(chai, SmtpClient) {
     'use strict';
 
     var expect = chai.expect;
