@@ -53,7 +53,7 @@ module.exports = function(grunt) {
                 src: [
                     'arraybuffer-slice/index.js',
                     'emailjs-tcp-socket/src/*.js',
-                    'emailjs-tcp-socket/node_modules/node-forge/js/forge.min.js',
+                    'node-forge/js/forge.min.js',
                     'emailjs-stringencoding/src/*.js',
                     'mocha/mocha.js',
                     'mocha/mocha.css',
@@ -108,8 +108,7 @@ module.exports = function(grunt) {
                 ],
                 dest: 'test/chrome/lib/'
             }
-        },
-        clean: ['test/lib/**/*', 'test/chrome/lib/**/*']
+        }
     });
 
     // Load the plugin(s)
@@ -189,9 +188,8 @@ module.exports = function(grunt) {
         this.async();
     });
 
-    grunt.registerTask('smtp', ['deps', 'simplesmtp']);
-    grunt.registerTask('dev', ['jshint', 'deps', 'connect']);
-    grunt.registerTask('deps', ['clean', 'copy']);
+    grunt.registerTask('smtp', ['copy', 'simplesmtp']);
+    grunt.registerTask('dev', ['jshint', 'copy', 'connect']);
     grunt.registerTask('test', ['jshint', 'mocha_phantomjs', 'mochaTest']);
-    grunt.registerTask('default', ['deps', 'test']);
+    grunt.registerTask('default', ['copy', 'test']);
 };
