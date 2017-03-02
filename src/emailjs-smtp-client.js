@@ -1045,15 +1045,9 @@
         var self = this;
         var createLogger = function (tag) {
             var log = function(level, messages) {
-                messages.map(function(message) {
-                    try {
-                        return typeof message.toString === 'function' ? message.toString() : JSON.stringify(message);
-                    } catch (e) {
-                        return message; // use JS builtin interpolation
-                    }
-                });
 
-                var logMessage = '[' + new Date().toISOString() + '][' + tag + '] ' + messages.join(' ');
+                var logMessage = '[' + new Date().toISOString() + '][' + tag + '][' +
+                    self.options.auth.user + '][' + self.host + '] ' + messages.join(' ');
                 if (level === self.LOG_LEVEL_DEBUG) {
                    console.log('[DEBUG]' + logMessage);
                 } else if (level === self.LOG_LEVEL_INFO) {
@@ -1074,7 +1068,7 @@
             };
         };
 
-        var logger = this.options.logger || createLogger(this.logLevel, "SmtpClient");
+        var logger = this.options.logger || createLogger("SmtpClient");
         this.logger = {
             // this could become way nicer when node supports the rest operator...
             debug: function() {
