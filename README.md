@@ -24,7 +24,7 @@ Please take a look at the [tcp-socket documentation](https://github.com/emailjs/
 
 ### [npm](https://www.npmjs.org/):
 
-    npm install --save emailjs-smtp-client
+    npm install emailjs-smtp-client
 
 ## Quirks
 
