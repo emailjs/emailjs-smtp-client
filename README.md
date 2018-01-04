@@ -1,5 +1,7 @@
 # SMTP Client
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/emailjs/emailjs-smtp-client.svg)](https://greenkeeper.io/)
+
 SMTP Client allows you to connect to and stream data to a SMTP server in the browser.
 
 [![Build Status](https://travis-ci.org/emailjs/emailjs-smtp-client.png?branch=master)](https://travis-ci.org/emailjs/emailjs-smtp-client)
