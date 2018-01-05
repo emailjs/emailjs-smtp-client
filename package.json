@@ -1,6 +1,6 @@
 {
   "name": "emailjs-smtp-client",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "homepage": "https://github.com/emailjs/emailjs-smtp-client",
   "description": "SMTP Client allows you to connect to and stream data to a SMTP server in the browser.",
   "author": "Andris Reinman <andris@kreata.ee>",
@@ -9,8 +9,12 @@
   ],
   "license": "MIT",
   "scripts": {
-    "pretest": "dir=$(pwd) && cd node_modules/node-forge/ && npm install && npm run minify && cd $dir",
-    "test": "grunt"
+    "build": "./scripts/build.sh",
+    "release": "./scripts/release.sh",
+    "lint": "$(npm bin)/standard",
+    "test": "npm run lint && npm run unit && npm run integration",
+    "unit": "$(npm bin)/mocha './src/*-unit.js' --reporter spec --require babel-register testutils.js",
+    "integration": "$(npm bin)/mocha './src/*-integration.js' --reporter spec --require babel-register testutils.js"
   },
   "repository": {
     "type": "git",
@@ -18,23 +22,34 @@
   },
   "main": "src/emailjs-smtp-client",
   "dependencies": {
-    "emailjs-stringencoding": "^1.0.1",
-    "emailjs-tcp-socket": "^1.0.1"
+    "emailjs-base64": "^1.1.4",
+    "emailjs-tcp-socket": "^2.0.0",
+    "text-encoding": "^0.6.4"
   },
   "devDependencies": {
-    "chai": "^4.1.1",
-    "grunt": "^1.0.1",
-    "grunt-contrib-clean": "^1.1.0",
-    "grunt-contrib-connect": "^1.0.2",
-    "grunt-contrib-copy": "^1.0.0",
-    "grunt-contrib-jshint": "^1.1.0",
-    "grunt-contrib-watch": "^1.0.0",
-    "grunt-mocha-phantomjs": "^4.0.0",
-    "grunt-mocha-test": "^0.13.2",
-    "mocha": "^3.5.0",
-    "node-forge": "^0.7.1",
-    "requirejs": "^2.1.22",
+    "babel-cli": "^6.26.0",
+    "babel-preset-env": "^1.6.1",
+    "babel-register": "^6.26.0",
+    "chai": "^4.1.2",
+    "mocha": "^4.0.1",
+    "pre-commit": "^1.2.2",
     "simplesmtp": "^0.3.35",
-    "sinon": "^3.1.0"
+    "sinon": "^4.1.3",
+    "standard": "^10.0.3"
+  },
+  "standard": {
+    "globals": [
+      "describe",
+      "it",
+      "before",
+      "beforeEach",
+      "afterEach",
+      "after",
+      "expect",
+      "sinon"
+    ],
+    "ignore": [
+      "dist"
+    ]
   }
 }
