@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-expressions */
 
-import SmtpClient from '..'
+import SmtpClient, { LOG_LEVEL_NONE } from '..'
 import simplesmtp from 'simplesmtp'
 
 describe('smtpclient node integration tests', function () {
@@ -41,7 +41,7 @@ describe('smtpclient node integration tests', function () {
     smtp = new SmtpClient('127.0.0.1', port, {
       useSecureTransport: false
     })
-    smtp.logLevel = smtp.LOG_LEVEL_NONE
+    smtp.logLevel = LOG_LEVEL_NONE
     expect(smtp).to.exist
 
     smtp.connect()

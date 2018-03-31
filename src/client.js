@@ -2,6 +2,13 @@ import { encode } from 'emailjs-base64'
 import TCPSocket from 'emailjs-tcp-socket'
 import { TextDecoder, TextEncoder } from 'text-encoding'
 import SmtpClientResponseParser from './parser'
+import createDefaultLogger from './logger'
+import {
+  LOG_LEVEL_ERROR,
+  LOG_LEVEL_WARN,
+  LOG_LEVEL_INFO,
+  LOG_LEVEL_DEBUG
+} from './common'
 
 var DEBUG_TAG = 'SMTP Client'
 
@@ -986,62 +993,13 @@ SmtpClient.prototype._buildXOAuth2Token = function (user, token) {
   return encode(authData.join('\x01'))
 }
 
-SmtpClient.prototype.LOG_LEVEL_NONE = 1000
-SmtpClient.prototype.LOG_LEVEL_ERROR = 40
-SmtpClient.prototype.LOG_LEVEL_WARN = 30
-SmtpClient.prototype.LOG_LEVEL_INFO = 20
-SmtpClient.prototype.LOG_LEVEL_DEBUG = 10
-SmtpClient.prototype.LOG_LEVEL_ALL = 0
-
-SmtpClient.prototype.createLogger = function () {
-  var self = this
-  var createLogger = function (tag) {
-    var log = function (level, messages) {
-      var logMessage = '[' + new Date().toISOString() + '][' + tag + '][' +
-        self.options.auth.user + '][' + self.host + '] ' + messages.join(' ')
-      if (level === self.LOG_LEVEL_DEBUG) {
-        console.log('[DEBUG]' + logMessage)
-      } else if (level === self.LOG_LEVEL_INFO) {
-        console.info('[INFO]' + logMessage)
-      } else if (level === self.LOG_LEVEL_WARN) {
-        console.warn('[WARN]' + logMessage)
-      } else if (level === self.LOG_LEVEL_ERROR) {
-        console.error('[ERROR]' + logMessage)
-      }
-    }
-
-    return {
-      // this could become way nicer when node supports the rest operator...
-      debug: function (msgs) { log(self.LOG_LEVEL_DEBUG, msgs) },
-      info: function (msgs) { log(self.LOG_LEVEL_INFO, msgs) },
-      warn: function (msgs) { log(self.LOG_LEVEL_WARN, msgs) },
-      error: function (msgs) { log(self.LOG_LEVEL_ERROR, msgs) }
-    }
-  }
-
-  var logger = this.options.logger || createLogger('SmtpClient')
+SmtpClient.prototype.createLogger = function (creator = createDefaultLogger) {
+  const logger = creator((this.options.auth || {}).user || '', this.host)
   this.logger = {
-    // this could become way nicer when node supports the rest operator...
-    debug: function () {
-      if (this.LOG_LEVEL_DEBUG >= this.logLevel) {
-        logger.debug(Array.prototype.slice.call(arguments))
-      }
-    }.bind(this),
-    info: function () {
-      if (this.LOG_LEVEL_INFO >= this.logLevel) {
-        logger.info(Array.prototype.slice.call(arguments))
-      }
-    }.bind(this),
-    warn: function () {
-      if (this.LOG_LEVEL_WARN >= this.logLevel) {
-        logger.warn(Array.prototype.slice.call(arguments))
-      }
-    }.bind(this),
-    error: function () {
-      if (this.LOG_LEVEL_ERROR >= this.logLevel) {
-        logger.error(Array.prototype.slice.call(arguments))
-      }
-    }.bind(this)
+    debug: (...msgs) => { if (LOG_LEVEL_DEBUG >= this.logLevel) { logger.debug(msgs) } },
+    info: (...msgs) => { if (LOG_LEVEL_INFO >= this.logLevel) { logger.info(msgs) } },
+    warn: (...msgs) => { if (LOG_LEVEL_WARN >= this.logLevel) { logger.warn(msgs) } },
+    error: (...msgs) => { if (LOG_LEVEL_ERROR >= this.logLevel) { logger.error(msgs) } }
   }
 }
 
