@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-expressions */
 
-import SmtpClient from './client'
+import SmtpClient from '..'
 import simplesmtp from 'simplesmtp'
 
 describe('smtpclient node integration tests', function () {

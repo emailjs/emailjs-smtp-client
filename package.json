@@ -20,7 +20,7 @@
     "type": "git",
     "url": "git://github.com/emailjs/emailjs-smtp-client.git"
   },
-  "main": "src/emailjs-smtp-client",
+  "main": "src/client",
   "dependencies": {
     "emailjs-base64": "^1.1.4",
     "emailjs-tcp-socket": "^2.0.0",
