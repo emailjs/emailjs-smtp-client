@@ -30,14 +30,11 @@ var DEBUG_TAG = 'SMTP Client'
  * @param {String} [options.authMethod] Force specific authentication method
  * @param {Boolean} [options.disableEscaping] If set to true, do not escape dots on the beginning of the lines
  */
-function SmtpClient (host, port, options) {
-  this._TCPSocket = TCPSocket
-
-  this.options = options || {}
-
+function SmtpClient (host, port, options = {}) {
   this.port = port || (this.options.useSecureTransport ? 465 : 25)
   this.host = host || 'localhost'
 
+  this.options = options
   /**
    * If set to true, start an encrypted connection instead of the plaintext one
    * (recommended if applicable). If useSecureTransport is not set but the port used is 465,
@@ -45,104 +42,28 @@ function SmtpClient (host, port, options) {
    */
   this.options.useSecureTransport = 'useSecureTransport' in this.options ? !!this.options.useSecureTransport : this.port === 465
 
-  /**
-   * Authentication object. If not set, authentication step will be skipped.
-   */
-  this.options.auth = this.options.auth || false
-
-  /**
-   * Hostname of the client, this will be used for introducing to the server
-   */
-  this.options.name = this.options.name || 'localhost'
-
-  /**
-   * Downstream TCP socket to the SMTP server, created with mozTCPSocket
-   */
-  this.socket = false
-
-  /**
-   * Indicates if the connection has been closed and can't be used anymore
-   *
-   */
-  this.destroyed = false
-
-  /**
-   * Informational value that indicates the maximum size (in bytes) for
-   * a message sent to the current server. Detected from SIZE info.
-   * Not available until connection has been established.
-   */
-  this.maxAllowedSize = 0
-
-  /**
-   * Keeps track if the downstream socket is currently full and
-   * a drain event should be waited for or not
-   */
-  this.waitDrain = false
+  this.options.auth = this.options.auth || false // Authentication object. If not set, authentication step will be skipped.
+  this.options.name = this.options.name || 'localhost' // Hostname of the client, this will be used for introducing to the server
+  this.socket = false // Downstream TCP socket to the SMTP server, created with mozTCPSocket
+  this.destroyed = false // Indicates if the connection has been closed and can't be used anymore
+  this.waitDrain = false // Keeps track if the downstream socket is currently full and a drain event should be waited for or not
 
   // Private properties
 
-  /**
-   * SMTP response parser object. All data coming from the downstream server
-   * is feeded to this parser
-   */
-  this._parser = new SmtpClientResponseParser()
-
-  /**
-   * If authenticated successfully, stores the username
-   */
-  this._authenticatedAs = null
-
-  /**
-   * A list of authentication mechanisms detected from the EHLO response
-   * and which are compatible with this library
-   */
-  this._supportedAuth = []
-
-  /**
-   * If true, accepts data from the upstream to be passed
-   * directly to the downstream socket. Used after the DATA command
-   */
-  this._dataMode = false
-
-  /**
-   * Keep track of the last bytes to see how the terminating dot should be placed
-   */
-  this._lastDataBytes = ''
-
-  /**
-   * Envelope object for tracking who is sending mail to whom
-   */
-  this._envelope = null
-
-  /**
-   * Stores the function that should be run after a response has been received
-   * from the server
-   */
-  this._currentAction = null
-
-  /**
-   * Indicates if the connection is secured or plaintext
-   */
-  this._secureMode = !!this.options.useSecureTransport
-
-  /**
-   * Timer waiting to declare the socket dead starting from the last write
-   */
-  this._socketTimeoutTimer = false
-
-  /**
-   * Start time of sending the first packet in data mode
-   */
-  this._socketTimeoutStart = false
-
-  /**
-   * Timeout for sending in data mode, gets extended with every send()
-   */
-  this._socketTimeoutPeriod = false
+  this._parser = new SmtpClientResponseParser() // SMTP response parser object. All data coming from the downstream server is feeded to this parser
+  this._authenticatedAs = null // If authenticated successfully, stores the username
+  this._supportedAuth = [] // A list of authentication mechanisms detected from the EHLO response and which are compatible with this library
+  this._dataMode = false // If true, accepts data from the upstream to be passed directly to the downstream socket. Used after the DATA command
+  this._lastDataBytes = '' // Keep track of the last bytes to see how the terminating dot should be placed
+  this._envelope = null // Envelope object for tracking who is sending mail to whom
+  this._currentAction = null // Stores the function that should be run after a response has been received from the server
+  this._secureMode = !!this.options.useSecureTransport // Indicates if the connection is secured or plaintext
+  this._socketTimeoutTimer = false // Timer waiting to declare the socket dead starting from the last write
+  this._socketTimeoutStart = false // Start time of sending the first packet in data mode
+  this._socketTimeoutPeriod = false // Timeout for sending in data mode, gets extended with every send()
 
   // Activate logging
   this.createLogger()
-  this.logLevel = this.LOG_LEVEL_ALL
 }
 
 //
@@ -218,8 +139,8 @@ SmtpClient.prototype.ondone = function () { }
 /**
  * Initiate a connection to the server
  */
-SmtpClient.prototype.connect = function () {
-  this.socket = this._TCPSocket.open(this.host, this.port, {
+SmtpClient.prototype.connect = function (SocketContructor = TCPSocket) {
+  this.socket = SocketContructor.open(this.host, this.port, {
     binaryType: 'arraybuffer',
     useSecureTransport: this._secureMode,
     ca: this.options.ca,
@@ -698,8 +619,8 @@ SmtpClient.prototype._actionEHLO = function (command) {
 
   // Detect maximum allowed message size
   if ((match = command.line.match(/SIZE (\d+)/i)) && Number(match[1])) {
-    this._maxAllowedSize = Number(match[1])
-    this.logger.debug(DEBUG_TAG, 'Maximum allowd message size: ' + this._maxAllowedSize)
+    const maxAllowedSize = Number(match[1])
+    this.logger.debug(DEBUG_TAG, 'Maximum allowd message size: ' + maxAllowedSize)
   }
 
   // Detect if the server supports STARTTLS
@@ -995,6 +916,7 @@ SmtpClient.prototype._buildXOAuth2Token = function (user, token) {
 
 SmtpClient.prototype.createLogger = function (creator = createDefaultLogger) {
   const logger = creator((this.options.auth || {}).user || '', this.host)
+  this.logLevel = this.LOG_LEVEL_ALL
   this.logger = {
     debug: (...msgs) => { if (LOG_LEVEL_DEBUG >= this.logLevel) { logger.debug(msgs) } },
     info: (...msgs) => { if (LOG_LEVEL_INFO >= this.logLevel) { logger.info(msgs) } },

@@ -4,10 +4,10 @@ import SmtpClient from './client'
 import { LOG_LEVEL_NONE } from './common'
 
 describe('smtpclient unit tests', function () {
-  var smtp
-  var host, port, options
-  var openStub, socketStub
-  var TCPSocket
+  let smtp
+  let host, port, options
+  let openStub, socketStub
+  let TCPSocket
 
   beforeEach(function () {
     host = '127.0.0.1'
@@ -21,7 +21,7 @@ describe('smtpclient unit tests', function () {
     smtp.logLevel = LOG_LEVEL_NONE
     expect(smtp).to.exist
 
-    TCPSocket = smtp._TCPSocket = function () { }
+    TCPSocket = function () { }
     TCPSocket.open = function () { }
     TCPSocket.prototype.close = function () { }
     TCPSocket.prototype.send = function () { }
@@ -33,15 +33,11 @@ describe('smtpclient unit tests', function () {
     socketStub = sinon.createStubInstance(TCPSocket)
     openStub = sinon.stub(TCPSocket, 'open').withArgs(host, port).returns(socketStub)
 
-    smtp.connect()
+    smtp.connect(TCPSocket)
 
     expect(openStub.callCount).to.equal(1)
     expect(socketStub.onopen).to.exist
     expect(socketStub.onerror).to.exist
-  })
-
-  afterEach(function () {
-    TCPSocket.open.restore()
   })
 
   describe('tcp-socket websocket proxy', function () {
@@ -59,7 +55,7 @@ describe('smtpclient unit tests', function () {
   describe('#connect', function () {
     it('should not throw', function () {
       var client = new SmtpClient(host, port)
-      client._TCPSocket = {
+      TCPSocket = {
         open: function () {
           var socket = {
             onopen: function () { },
@@ -70,7 +66,7 @@ describe('smtpclient unit tests', function () {
           return socket
         }
       }
-      client.connect()
+      client.connect(TCPSocket)
     })
   })
 
