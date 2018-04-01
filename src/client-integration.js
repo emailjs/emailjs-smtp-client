@@ -6,13 +6,13 @@ import simplesmtp from 'simplesmtp'
 describe('smtpclient node integration tests', function () {
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
 
-  var smtp
-  var port = 10001
-  var server
+  let smtp
+  let port = 10001
+  let server
 
   before(function (done) {
     // start smtp test server
-    var options = {
+    let options = {
       debug: false,
       disableDNSValidation: true,
       port: port,
@@ -161,7 +161,7 @@ describe('smtpclient node integration tests', function () {
   })
 
   it('should timeout', function (done) {
-    var errored = false
+    let errored = false
 
     smtp.onerror = function () {
       errored = true
@@ -196,15 +196,15 @@ describe('smtpclient node integration tests', function () {
 })
 
 describe('smtpclient authentication tests', function () {
-  var port = 10001
-  var server
+  let port = 10001
+  let server
 
   before(function (done) {
     // start smtp test server
-    var options = {
+    let options = {
       debug: false,
       disableDNSValidation: true,
-      port: port,
+      port,
       enableAuthentication: true,
       secureConnection: false,
       ignoreTLS: false,
@@ -229,7 +229,7 @@ describe('smtpclient authentication tests', function () {
   })
 
   it('should authenticate with default method', function (done) {
-    var smtp = new SmtpClient('127.0.0.1', port, {
+    let smtp = new SmtpClient('127.0.0.1', port, {
       useSecureTransport: false,
       auth: {
         user: 'abc',
@@ -247,7 +247,7 @@ describe('smtpclient authentication tests', function () {
   })
 
   it('should authenticate with AUTH LOGIN', function (done) {
-    var smtp = new SmtpClient('127.0.0.1', port, {
+    let smtp = new SmtpClient('127.0.0.1', port, {
       useSecureTransport: false,
       auth: {
         user: 'abc',
@@ -266,7 +266,7 @@ describe('smtpclient authentication tests', function () {
   })
 
   it('should fail with invalid credentials', function (done) {
-    var smtp = new SmtpClient('127.0.0.1', port, {
+    let smtp = new SmtpClient('127.0.0.1', port, {
       useSecureTransport: false,
       auth: {
         user: 'abcd',
@@ -284,7 +284,7 @@ describe('smtpclient authentication tests', function () {
   })
 
   it('should authenticate with AUTH XOAUTH2 and send a message', function (done) {
-    var smtp = new SmtpClient('127.0.0.1', port, {
+    let smtp = new SmtpClient('127.0.0.1', port, {
       useSecureTransport: false,
       auth: {
         user: 'abc',
@@ -320,7 +320,7 @@ describe('smtpclient authentication tests', function () {
   })
 
   it('should fail with AUTH XOAUTH2', function (done) {
-    var smtp = new SmtpClient('127.0.0.1', port, {
+    let smtp = new SmtpClient('127.0.0.1', port, {
       useSecureTransport: false,
       auth: {
         user: 'abc',
@@ -338,13 +338,13 @@ describe('smtpclient authentication tests', function () {
 })
 
 describe('smtpclient STARTTLS tests', function () {
-  var port = 10001
-  var server
+  let port = 10001
+  let server
 
   describe('STARTTLS is supported', function () {
     before(function (done) {
       // start smtp test server
-      var options = {
+      let options = {
         debug: false,
         disableDNSValidation: true,
         port: port,
@@ -372,7 +372,7 @@ describe('smtpclient STARTTLS tests', function () {
     })
 
     it('should connect insecurely', function (done) {
-      var smtp = new SmtpClient('127.0.0.1', port, {
+      let smtp = new SmtpClient('127.0.0.1', port, {
         useSecureTransport: false,
         auth: {
           user: 'abc',
@@ -392,7 +392,7 @@ describe('smtpclient STARTTLS tests', function () {
     })
 
     it('should connect securely', function (done) {
-      var smtp = new SmtpClient('127.0.0.1', port, {
+      let smtp = new SmtpClient('127.0.0.1', port, {
         useSecureTransport: false,
         auth: {
           user: 'abc',
@@ -414,7 +414,7 @@ describe('smtpclient STARTTLS tests', function () {
   describe('STARTTLS is disabled', function () {
     before(function (done) {
       // start smtp test server
-      var options = {
+      let options = {
         debug: false,
         disableDNSValidation: true,
         port: port,
@@ -443,7 +443,7 @@ describe('smtpclient STARTTLS tests', function () {
     })
 
     it('should connect insecurely', function (done) {
-      var smtp = new SmtpClient('127.0.0.1', port, {
+      let smtp = new SmtpClient('127.0.0.1', port, {
         useSecureTransport: false,
         auth: {
           user: 'abc',
@@ -462,7 +462,7 @@ describe('smtpclient STARTTLS tests', function () {
     })
 
     it('should fail connecting to insecure server', function (done) {
-      var smtp = new SmtpClient('127.0.0.1', port, {
+      let smtp = new SmtpClient('127.0.0.1', port, {
         useSecureTransport: false,
         auth: {
           user: 'abc',
@@ -487,7 +487,7 @@ describe('smtpclient STARTTLS tests', function () {
   describe('no STARTTLS because no EHLO, only HELO', function () {
     before(function (done) {
       // start smtp test server
-      var options = {
+      let options = {
         debug: false,
         disableDNSValidation: true,
         port: port,
@@ -517,7 +517,7 @@ describe('smtpclient STARTTLS tests', function () {
     })
 
     it('should fail connecting to insecure server', function (done) {
-      var smtp = new SmtpClient('127.0.0.1', port, {
+      let smtp = new SmtpClient('127.0.0.1', port, {
         useSecureTransport: false,
         auth: {
           user: 'abc',

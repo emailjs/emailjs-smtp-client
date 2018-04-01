@@ -54,10 +54,10 @@ describe('smtpclient unit tests', function () {
 
   describe('#connect', function () {
     it('should not throw', function () {
-      var client = new SmtpClient(host, port)
+      let client = new SmtpClient(host, port)
       TCPSocket = {
         open: function () {
-          var socket = {
+          let socket = {
             onopen: function () { },
             onerror: function () { }
           }
@@ -90,7 +90,7 @@ describe('smtpclient unit tests', function () {
 
   describe('#quit', function () {
     it('should send QUIT', function () {
-      var _sendCommandStub = sinon.stub(smtp, '_sendCommand')
+      let _sendCommandStub = sinon.stub(smtp, '_sendCommand')
 
       smtp.quit()
 
@@ -102,7 +102,7 @@ describe('smtpclient unit tests', function () {
 
   describe('#reset', function () {
     it('should send RSET', function () {
-      var _sendCommandStub = sinon.stub(smtp, '_sendCommand')
+      let _sendCommandStub = sinon.stub(smtp, '_sendCommand')
 
       smtp.reset()
 
@@ -123,7 +123,7 @@ describe('smtpclient unit tests', function () {
     })
 
     it('should store custom authentication', function () {
-      var auth = {
+      let auth = {
         user: 'test'
       }
       smtp.options.auth = {
@@ -156,11 +156,11 @@ describe('smtpclient unit tests', function () {
 
   describe('#useEnvelope', function () {
     it('should send MAIL FROM', function () {
-      var envelope = {
+      let envelope = {
         from: 'ft',
         to: ['tt']
       }
-      var _sendCommandStub = sinon.stub(smtp, '_sendCommand')
+      let _sendCommandStub = sinon.stub(smtp, '_sendCommand')
 
       smtp.useEnvelope(envelope)
 
@@ -181,7 +181,7 @@ describe('smtpclient unit tests', function () {
     })
 
     it('should send data to socket', function () {
-      var _sendStringStub = sinon.stub(smtp, '_sendString')
+      let _sendStringStub = sinon.stub(smtp, '_sendString')
 
       smtp._dataMode = true
       smtp.send('abcde')
@@ -212,7 +212,7 @@ describe('smtpclient unit tests', function () {
 
   describe('#_onData', function () {
     it('should decode and send chunk to parser', function () {
-      var _parserSendStub = sinon.stub(smtp._parser, 'send')
+      let _parserSendStub = sinon.stub(smtp._parser, 'send')
 
       smtp._onData({
         data: new Uint8Array([97, 98, 99]).buffer // abc
@@ -226,7 +226,7 @@ describe('smtpclient unit tests', function () {
 
   describe('#_onDrain', function () {
     it('should emit ondrain', function () {
-      var _ondrainStub = sinon.stub(smtp, 'ondrain')
+      let _ondrainStub = sinon.stub(smtp, 'ondrain')
 
       smtp._onDrain()
 
@@ -238,9 +238,9 @@ describe('smtpclient unit tests', function () {
 
   describe('#_onError', function () {
     it('should emit onerror and close connection', function () {
-      var _onerrorStub = sinon.stub(smtp, 'onerror')
-      var _closeStub = sinon.stub(smtp, 'close')
-      var err = new Error('abc')
+      let _onerrorStub = sinon.stub(smtp, 'onerror')
+      let _closeStub = sinon.stub(smtp, 'close')
+      let err = new Error('abc')
 
       smtp._onError({
         data: err
@@ -256,7 +256,7 @@ describe('smtpclient unit tests', function () {
 
   describe('#_onClose', function () {
     it('should call _destroy', function () {
-      var _destroyStub = sinon.stub(smtp, '_destroy')
+      let _destroyStub = sinon.stub(smtp, '_destroy')
 
       smtp._onClose()
 
@@ -268,8 +268,8 @@ describe('smtpclient unit tests', function () {
 
   describe('#_onCommand', function () {
     it('should run stored handler', function () {
-      var _commandStub = sinon.stub()
-      var cmd = 'abc'
+      let _commandStub = sinon.stub()
+      let cmd = 'abc'
 
       smtp._currentAction = _commandStub
       smtp._onCommand(cmd)
@@ -280,7 +280,7 @@ describe('smtpclient unit tests', function () {
 
   describe('#_destroy', function () {
     it('should do nothing if already destroyed', function () {
-      var _oncloseStub = sinon.stub(smtp, 'onclose')
+      let _oncloseStub = sinon.stub(smtp, 'onclose')
 
       smtp.destroyed = true
       smtp._destroy()
@@ -291,7 +291,7 @@ describe('smtpclient unit tests', function () {
     })
 
     it('should emit onclose if not destroyed yet', function () {
-      var _oncloseStub = sinon.stub(smtp, 'onclose')
+      let _oncloseStub = sinon.stub(smtp, 'onclose')
 
       smtp.destroyed = false
       smtp._destroy()
@@ -313,7 +313,7 @@ describe('smtpclient unit tests', function () {
 
   describe('_authenticateUser', function () {
     it('should emit onidle if no auth info', function () {
-      var _onidleStub = sinon.stub(smtp, 'onidle')
+      let _onidleStub = sinon.stub(smtp, 'onidle')
 
       smtp.options.auth = false
       smtp._authenticateUser()
@@ -325,7 +325,7 @@ describe('smtpclient unit tests', function () {
     })
 
     it('should use AUTH PLAIN by default', function () {
-      var _sendCommandStub = sinon.stub(smtp, '_sendCommand')
+      let _sendCommandStub = sinon.stub(smtp, '_sendCommand')
 
       smtp.options.auth = {
         user: 'abc',
@@ -341,7 +341,7 @@ describe('smtpclient unit tests', function () {
     })
 
     it('should use AUTH LOGIN if specified', function () {
-      var _sendCommandStub = sinon.stub(smtp, '_sendCommand')
+      let _sendCommandStub = sinon.stub(smtp, '_sendCommand')
 
       smtp.options.auth = {
         user: 'abc',
@@ -358,7 +358,7 @@ describe('smtpclient unit tests', function () {
     })
 
     it('should use AUTH XOAUTH2 if specified', function () {
-      var _sendCommandStub = sinon.stub(smtp, '_sendCommand')
+      let _sendCommandStub = sinon.stub(smtp, '_sendCommand')
 
       smtp.options.auth = {
         user: 'abc',
@@ -376,7 +376,7 @@ describe('smtpclient unit tests', function () {
 
   describe('#_actionGreeting', function () {
     it('should fail if response is not 220', function () {
-      var _onErrorStub = sinon.stub(smtp, '_onError')
+      let _onErrorStub = sinon.stub(smtp, '_onError')
 
       smtp._actionGreeting({
         statusCode: 500,
@@ -389,7 +389,7 @@ describe('smtpclient unit tests', function () {
     })
 
     it('should send EHLO on greeting', function () {
-      var _sendCommandStub = sinon.stub(smtp, '_sendCommand')
+      let _sendCommandStub = sinon.stub(smtp, '_sendCommand')
 
       smtp.options.name = 'abc'
       smtp._actionGreeting({
@@ -404,7 +404,7 @@ describe('smtpclient unit tests', function () {
     })
 
     it('should send LHLO on greeting', function () {
-      var _sendCommandStub = sinon.stub(smtp, '_sendCommand')
+      let _sendCommandStub = sinon.stub(smtp, '_sendCommand')
 
       smtp.options.name = 'abc'
       smtp.options.lmtp = true
@@ -422,7 +422,7 @@ describe('smtpclient unit tests', function () {
 
   describe('#_actionLHLO', function () {
     it('should proceed to EHLO', function () {
-      var _actionEHLOStub = sinon.stub(smtp, '_actionEHLO')
+      let _actionEHLOStub = sinon.stub(smtp, '_actionEHLO')
 
       smtp.options.name = 'abc'
       smtp._actionLHLO({
@@ -438,7 +438,7 @@ describe('smtpclient unit tests', function () {
 
   describe('#_actionEHLO', function () {
     it('should fallback to HELO on error', function () {
-      var _sendCommandStub = sinon.stub(smtp, '_sendCommand')
+      let _sendCommandStub = sinon.stub(smtp, '_sendCommand')
 
       smtp.options.name = 'abc'
       smtp._actionEHLO({
@@ -452,7 +452,7 @@ describe('smtpclient unit tests', function () {
     })
 
     it('should proceed to authentication', function () {
-      var _authenticateUserStub = sinon.stub(smtp, '_authenticateUser')
+      let _authenticateUserStub = sinon.stub(smtp, '_authenticateUser')
 
       smtp._actionEHLO({
         success: true,
@@ -466,7 +466,7 @@ describe('smtpclient unit tests', function () {
     })
 
     it('should proceed to starttls', function () {
-      var _sendCommandStub = sinon.stub(smtp, '_sendCommand')
+      let _sendCommandStub = sinon.stub(smtp, '_sendCommand')
 
       smtp._secureMode = false
       smtp._actionEHLO({
@@ -483,7 +483,7 @@ describe('smtpclient unit tests', function () {
 
   describe('#_actionHELO', function () {
     it('should proceed to authentication', function () {
-      var _authenticateUserStub = sinon.stub(smtp, '_authenticateUser')
+      let _authenticateUserStub = sinon.stub(smtp, '_authenticateUser')
 
       smtp._actionHELO({
         success: true
@@ -497,7 +497,7 @@ describe('smtpclient unit tests', function () {
 
   describe('#_actionSTARTTLS', function () {
     it('should upgrade connection', function () {
-      var _sendCommandStub = sinon.stub(smtp, '_sendCommand')
+      let _sendCommandStub = sinon.stub(smtp, '_sendCommand')
 
       smtp.options.name = 'abc'
       smtp._actionSTARTTLS({
@@ -515,7 +515,7 @@ describe('smtpclient unit tests', function () {
 
   describe('#_actionAUTH_LOGIN_USER', function () {
     it('should emit error on invalid input', function () {
-      var _onErrorStub = sinon.stub(smtp, '_onError')
+      let _onErrorStub = sinon.stub(smtp, '_onError')
 
       smtp._actionAUTH_LOGIN_USER({
         statusCode: 334, // valid status code
@@ -529,7 +529,7 @@ describe('smtpclient unit tests', function () {
     })
 
     it('should respond to server with base64 encoded username', function () {
-      var _sendCommandStub = sinon.stub(smtp, '_sendCommand')
+      let _sendCommandStub = sinon.stub(smtp, '_sendCommand')
 
       smtp.options.auth = {
         user: 'abc',
@@ -549,7 +549,7 @@ describe('smtpclient unit tests', function () {
 
   describe('#_actionAUTH_LOGIN_PASS', function () {
     it('should emit error on invalid input', function () {
-      var _onErrorStub = sinon.stub(smtp, '_onError')
+      let _onErrorStub = sinon.stub(smtp, '_onError')
 
       smtp._actionAUTH_LOGIN_PASS({
         statusCode: 334, // valid status code
@@ -563,7 +563,7 @@ describe('smtpclient unit tests', function () {
     })
 
     it('should respond to server with base64 encoded password', function () {
-      var _sendCommandStub = sinon.stub(smtp, '_sendCommand')
+      let _sendCommandStub = sinon.stub(smtp, '_sendCommand')
 
       smtp.options.auth = {
         user: 'abc',
@@ -583,7 +583,7 @@ describe('smtpclient unit tests', function () {
 
   describe('#_actionAUTH_XOAUTH2', function () {
     it('should send empty response on error', function () {
-      var _sendCommandStub = sinon.stub(smtp, '_sendCommand')
+      let _sendCommandStub = sinon.stub(smtp, '_sendCommand')
 
       smtp._actionAUTH_XOAUTH2({
         success: false
@@ -596,9 +596,9 @@ describe('smtpclient unit tests', function () {
     })
 
     it('should run _actionAUTHComplete on success', function () {
-      var _actionAUTHCompleteStub = sinon.stub(smtp, '_actionAUTHComplete')
+      let _actionAUTHCompleteStub = sinon.stub(smtp, '_actionAUTHComplete')
 
-      var cmd = {
+      let cmd = {
         success: true
       }
       smtp._actionAUTH_XOAUTH2(cmd)
@@ -611,7 +611,7 @@ describe('smtpclient unit tests', function () {
 
   describe('#_actionAUTHComplete', function () {
     it('should emit error on invalid auth', function () {
-      var _onErrorStub = sinon.stub(smtp, '_onError')
+      let _onErrorStub = sinon.stub(smtp, '_onError')
 
       smtp._actionAUTHComplete({
         success: false,
@@ -625,7 +625,7 @@ describe('smtpclient unit tests', function () {
     })
 
     it('should emit idle if auth succeeded', function () {
-      var _onidleStub = sinon.stub(smtp, 'onidle')
+      let _onidleStub = sinon.stub(smtp, 'onidle')
 
       smtp.options.auth = {
         user: 'abc',
@@ -645,7 +645,7 @@ describe('smtpclient unit tests', function () {
 
   describe('#_actionMAIL', function () {
     it('should emit error on invalid input', function () {
-      var _onErrorStub = sinon.stub(smtp, '_onError')
+      let _onErrorStub = sinon.stub(smtp, '_onError')
 
       smtp._actionMAIL({
         success: false,
@@ -659,7 +659,7 @@ describe('smtpclient unit tests', function () {
     })
 
     it('should emit error on empty recipient queue', function () {
-      var _onErrorStub = sinon.stub(smtp, '_onError')
+      let _onErrorStub = sinon.stub(smtp, '_onError')
 
       smtp._envelope = {
         rcptQueue: []
@@ -675,7 +675,7 @@ describe('smtpclient unit tests', function () {
     })
 
     it('should send to the next recipient in queue', function () {
-      var _sendCommandStub = sinon.stub(smtp, '_sendCommand')
+      let _sendCommandStub = sinon.stub(smtp, '_sendCommand')
 
       smtp._envelope = {
         rcptQueue: ['receiver']
@@ -693,7 +693,7 @@ describe('smtpclient unit tests', function () {
 
   describe('#_actionRCPT', function () {
     it('should send DATA if queue is processed', function () {
-      var _sendCommandStub = sinon.stub(smtp, '_sendCommand')
+      let _sendCommandStub = sinon.stub(smtp, '_sendCommand')
 
       smtp._envelope = {
         to: ['abc'],
@@ -712,7 +712,7 @@ describe('smtpclient unit tests', function () {
     })
 
     it('should send rerun RCPT if queue is not empty', function () {
-      var _sendCommandStub = sinon.stub(smtp, '_sendCommand')
+      let _sendCommandStub = sinon.stub(smtp, '_sendCommand')
 
       smtp._envelope = {
         rcptQueue: ['receiver'],
@@ -729,7 +729,7 @@ describe('smtpclient unit tests', function () {
     })
 
     it('should emit error if all recipients failed', function () {
-      var _onErrorStub = sinon.stub(smtp, '_onError')
+      let _onErrorStub = sinon.stub(smtp, '_onError')
 
       smtp._envelope = {
         to: ['abc'],
@@ -750,7 +750,7 @@ describe('smtpclient unit tests', function () {
 
   describe('#_actionRSET', function () {
     it('should emit error on invalid input', function () {
-      var _onErrorStub = sinon.stub(smtp, '_onError')
+      let _onErrorStub = sinon.stub(smtp, '_onError')
 
       smtp._actionRSET({
         success: false,
@@ -764,7 +764,7 @@ describe('smtpclient unit tests', function () {
     })
 
     it('should proceed to authentication', function () {
-      var _authenticateUserStub = sinon.stub(smtp, '_authenticateUser')
+      let _authenticateUserStub = sinon.stub(smtp, '_authenticateUser')
 
       smtp._actionRSET({
         success: true
@@ -779,7 +779,7 @@ describe('smtpclient unit tests', function () {
 
   describe('#_actionDATA', function () {
     it('should emit error on invalid input', function () {
-      var _onErrorStub = sinon.stub(smtp, '_onError')
+      let _onErrorStub = sinon.stub(smtp, '_onError')
 
       smtp._actionDATA({
         statusCode: 500,
@@ -793,7 +793,7 @@ describe('smtpclient unit tests', function () {
     })
 
     it('should emit onready on success', function () {
-      var _onreadyStub = sinon.stub(smtp, 'onready')
+      let _onreadyStub = sinon.stub(smtp, 'onready')
 
       smtp._envelope = {
         to: ['abc'],
@@ -814,7 +814,7 @@ describe('smtpclient unit tests', function () {
 
   describe('#_actionStream', function () {
     it('should emit ondone with argument false', function () {
-      var _ondoneStub = sinon.stub(smtp, 'ondone')
+      let _ondoneStub = sinon.stub(smtp, 'ondone')
 
       smtp._actionStream({
         success: false
@@ -826,7 +826,7 @@ describe('smtpclient unit tests', function () {
     })
 
     it('should emit ondone with argument true', function () {
-      var _ondoneStub = sinon.stub(smtp, 'ondone')
+      let _ondoneStub = sinon.stub(smtp, 'ondone')
 
       smtp._actionStream({
         success: true
@@ -838,7 +838,7 @@ describe('smtpclient unit tests', function () {
     })
 
     it('should emit onidle if required', function () {
-      var _onidleStub = sinon.stub(smtp, 'onidle')
+      let _onidleStub = sinon.stub(smtp, 'onidle')
 
       smtp._currentAction = smtp._actionIdle
       smtp._actionStream({
@@ -851,7 +851,7 @@ describe('smtpclient unit tests', function () {
     })
 
     it('should cancel onidle', function () {
-      var _onidleStub = sinon.stub(smtp, 'onidle')
+      let _onidleStub = sinon.stub(smtp, 'onidle')
 
       smtp.ondone = function () {
         this._currentAction = false
@@ -868,7 +868,7 @@ describe('smtpclient unit tests', function () {
 
     describe('LMTP responses', function () {
       it('should receive single responses', function () {
-        var _ondoneStub = sinon.stub(smtp, 'ondone')
+        let _ondoneStub = sinon.stub(smtp, 'ondone')
 
         smtp.options.lmtp = true
         smtp._envelope = {
@@ -887,7 +887,7 @@ describe('smtpclient unit tests', function () {
       })
 
       it('should wait for additional responses', function () {
-        var _ondoneStub = sinon.stub(smtp, 'ondone')
+        let _ondoneStub = sinon.stub(smtp, 'ondone')
 
         smtp.options.lmtp = true
         smtp._envelope = {
