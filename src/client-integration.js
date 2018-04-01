@@ -11,7 +11,7 @@ describe('smtpclient node integration tests', function () {
   var server
 
   before(function (done) {
-        // start smtp test server
+    // start smtp test server
     var options = {
       debug: false,
       disableDNSValidation: true,
@@ -21,8 +21,8 @@ describe('smtpclient node integration tests', function () {
     }
 
     server = simplesmtp.createServer(options)
-    server.on('startData', function (/* connection */) {})
-    server.on('data', function (/* connection, chunk */) {})
+    server.on('startData', function (/* connection */) { })
+    server.on('data', function (/* connection, chunk */) { })
     server.on('dataReady', function (connection, callback) {
       callback(null, 'foo')
     })
@@ -33,7 +33,7 @@ describe('smtpclient node integration tests', function () {
   })
 
   after(function (done) {
-        // close smtp test server
+    // close smtp test server
     server.end(done)
   })
 
@@ -137,7 +137,7 @@ describe('smtpclient node integration tests', function () {
 
   it('should not idle', function (done) {
     smtp.onidle = function () {
-            // should not run
+      // should not run
       expect(true).to.be.false
     }
 
@@ -160,7 +160,7 @@ describe('smtpclient node integration tests', function () {
     })
   })
 
-  it('shoud timeout', function (done) {
+  it('should timeout', function (done) {
     var errored = false
 
     smtp.onerror = function () {
@@ -175,16 +175,16 @@ describe('smtpclient node integration tests', function () {
     smtp.onready = function (failedRecipients) {
       expect(failedRecipients).to.be.empty
 
-            // remove the ondata event to simulate 100% packet loss and make the socket time out after 10ms
-      smtp.TIMEOUT_SOCKET_LOWER_BOUND = 10
-      smtp.TIMEOUT_SOCKET_MULTIPLIER = 0
-      smtp.socket.ondata = function () {}
+      // remove the ondata event to simulate 100% packet loss and make the socket time out after 10ms
+      smtp.timeoutSocketLowerBound = 10
+      smtp.timeoutSocketMultiplier = 0
+      smtp.socket.ondata = function () { }
 
       smtp.send('Subject: test\r\n\r\nMessage body') // trigger write
     }
 
     smtp.onidle = smtp.ondone = function () {
-            // should not happen
+      // should not happen
       expect(true).to.be.false
     }
 
@@ -200,7 +200,7 @@ describe('smtpclient authentication tests', function () {
   var server
 
   before(function (done) {
-        // start smtp test server
+    // start smtp test server
     var options = {
       debug: false,
       disableDNSValidation: true,
@@ -212,8 +212,8 @@ describe('smtpclient authentication tests', function () {
     }
 
     server = simplesmtp.createServer(options)
-    server.on('startData', function (/* connection */) {})
-    server.on('data', function (/* connection, chunk */) {})
+    server.on('startData', function (/* connection */) { })
+    server.on('data', function (/* connection, chunk */) { })
     server.on('dataReady', function (connection, callback) {
       callback(null, 'foo')
     })
@@ -224,7 +224,7 @@ describe('smtpclient authentication tests', function () {
   })
 
   after(function (done) {
-        // close smtp test server
+    // close smtp test server
     server.end(done)
   })
 
@@ -343,7 +343,7 @@ describe('smtpclient STARTTLS tests', function () {
 
   describe('STARTTLS is supported', function () {
     before(function (done) {
-            // start smtp test server
+      // start smtp test server
       var options = {
         debug: false,
         disableDNSValidation: true,
@@ -355,8 +355,8 @@ describe('smtpclient STARTTLS tests', function () {
       }
 
       server = simplesmtp.createServer(options)
-      server.on('startData', function (/* connection */) {})
-      server.on('data', function (/* connection, chunk */) {})
+      server.on('startData', function (/* connection */) { })
+      server.on('data', function (/* connection, chunk */) { })
       server.on('dataReady', function (connection, callback) {
         callback(null, 'foo')
       })
@@ -367,7 +367,7 @@ describe('smtpclient STARTTLS tests', function () {
     })
 
     after(function (done) {
-            // close smtp test server
+      // close smtp test server
       server.end(done)
     })
 
@@ -413,7 +413,7 @@ describe('smtpclient STARTTLS tests', function () {
 
   describe('STARTTLS is disabled', function () {
     before(function (done) {
-            // start smtp test server
+      // start smtp test server
       var options = {
         debug: false,
         disableDNSValidation: true,
@@ -426,8 +426,8 @@ describe('smtpclient STARTTLS tests', function () {
       }
 
       server = simplesmtp.createServer(options)
-      server.on('startData', function (/* connection */) {})
-      server.on('data', function (/* connection, chunk */) {})
+      server.on('startData', function (/* connection */) { })
+      server.on('data', function (/* connection, chunk */) { })
       server.on('dataReady', function (connection, callback) {
         callback(null, 'foo')
       })
@@ -438,7 +438,7 @@ describe('smtpclient STARTTLS tests', function () {
     })
 
     after(function (done) {
-            // close smtp test server
+      // close smtp test server
       server.end(done)
     })
 
@@ -486,7 +486,7 @@ describe('smtpclient STARTTLS tests', function () {
 
   describe('no STARTTLS because no EHLO, only HELO', function () {
     before(function (done) {
-            // start smtp test server
+      // start smtp test server
       var options = {
         debug: false,
         disableDNSValidation: true,
@@ -500,8 +500,8 @@ describe('smtpclient STARTTLS tests', function () {
       }
 
       server = simplesmtp.createServer(options)
-      server.on('startData', function (/* connection */) {})
-      server.on('data', function (/* connection, chunk */) {})
+      server.on('startData', function (/* connection */) { })
+      server.on('data', function (/* connection, chunk */) { })
       server.on('dataReady', function (connection, callback) {
         callback(null, 'foo')
       })
@@ -512,7 +512,7 @@ describe('smtpclient STARTTLS tests', function () {
     })
 
     after(function (done) {
-            // close smtp test server
+      // close smtp test server
       server.end(done)
     })
 

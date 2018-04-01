@@ -13,6 +13,20 @@ import {
 var DEBUG_TAG = 'SMTP Client'
 
 /**
+ * Lower Bound for socket timeout to wait since the last data was written to a socket
+ */
+const TIMEOUT_SOCKET_LOWER_BOUND = 10000
+
+/**
+ * Multiplier for socket timeout:
+ *
+ * We assume at least a GPRS connection with 115 kb/s = 14,375 kB/s tops, so 10 KB/s to be on
+ * the safe side. We can timeout after a lower bound of 10s + (n KB / 10 KB/s). A 1 MB message
+ * upload would be 110 seconds to wait for the timeout. 10 KB/s === 0.1 s/B
+ */
+const TIMEOUT_SOCKET_MULTIPLIER = 0.1
+
+/**
  * Creates a connection object to a SMTP server and allows to send mail through it.
  * Call `connect` method to inititate the actual connection, the constructor only
  * defines the properties but does not actually connect.
@@ -31,6 +45,9 @@ var DEBUG_TAG = 'SMTP Client'
  * @param {Boolean} [options.disableEscaping] If set to true, do not escape dots on the beginning of the lines
  */
 function SmtpClient (host, port, options = {}) {
+  this.timeoutSocketLowerBound = TIMEOUT_SOCKET_LOWER_BOUND
+  this.timeoutSocketMultiplier = TIMEOUT_SOCKET_MULTIPLIER
+
   this.port = port || (this.options.useSecureTransport ? 465 : 25)
   this.host = host || 'localhost'
 
@@ -65,24 +82,6 @@ function SmtpClient (host, port, options = {}) {
   // Activate logging
   this.createLogger()
 }
-
-//
-// CONSTANTS
-//
-
-/**
- * Lower Bound for socket timeout to wait since the last data was written to a socket
- */
-SmtpClient.prototype.TIMEOUT_SOCKET_LOWER_BOUND = 10000
-
-/**
- * Multiplier for socket timeout:
- *
- * We assume at least a GPRS connection with 115 kb/s = 14,375 kB/s tops, so 10 KB/s to be on
- * the safe side. We can timeout after a lower bound of 10s + (n KB / 10 KB/s). A 1 MB message
- * upload would be 110 seconds to wait for the timeout. 10 KB/s === 0.1 s/B
- */
-SmtpClient.prototype.TIMEOUT_SOCKET_MULTIPLIER = 0.1
 
 //
 // EVENTS
@@ -450,7 +449,7 @@ SmtpClient.prototype._send = function (buffer) {
 }
 
 SmtpClient.prototype._setTimeout = function (byteLength) {
-  var prolongPeriod = Math.floor(byteLength * this.TIMEOUT_SOCKET_MULTIPLIER)
+  var prolongPeriod = Math.floor(byteLength * this.timeoutSocketMultiplier)
   var timeout
 
   if (this._dataMode) {
@@ -461,13 +460,13 @@ SmtpClient.prototype._setTimeout = function (byteLength) {
     this._socketTimeoutStart = this._socketTimeoutStart || now
 
     // the old timeout period, normalized to a minimum of TIMEOUT_SOCKET_LOWER_BOUND
-    this._socketTimeoutPeriod = (this._socketTimeoutPeriod || this.TIMEOUT_SOCKET_LOWER_BOUND) + prolongPeriod
+    this._socketTimeoutPeriod = (this._socketTimeoutPeriod || this.timeoutSocketLowerBound) + prolongPeriod
 
     // the new timeout is the delta between the new firing time (= timeout period + timeout start time) and now
     timeout = this._socketTimeoutStart + this._socketTimeoutPeriod - now
   } else {
     // set new timout
-    timeout = this.TIMEOUT_SOCKET_LOWER_BOUND + prolongPeriod
+    timeout = this.timeoutSocketLowerBound + prolongPeriod
   }
 
   clearTimeout(this._socketTimeoutTimer) // clear pending timeouts
