@@ -48,13 +48,14 @@ class SmtpClient {
    * @param {Boolean} [options.disableEscaping] If set to true, do not escape dots on the beginning of the lines
    */
   constructor (host, port, options = {}) {
+    this.options = options
+
     this.timeoutSocketLowerBound = TIMEOUT_SOCKET_LOWER_BOUND
     this.timeoutSocketMultiplier = TIMEOUT_SOCKET_MULTIPLIER
 
     this.port = port || (this.options.useSecureTransport ? 465 : 25)
     this.host = host || 'localhost'
 
-    this.options = options
     /**
      * If set to true, start an encrypted connection instead of the plaintext one
      * (recommended if applicable). If useSecureTransport is not set but the port used is 465,
