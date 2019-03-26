@@ -1,7 +1,6 @@
 /* eslint-disable no-unused-expressions */
 
 import SmtpClient from './client'
-import { LOG_LEVEL_NONE } from './common'
 
 describe('smtpclient unit tests', function () {
   let smtp
@@ -18,7 +17,6 @@ describe('smtpclient unit tests', function () {
     }
 
     smtp = new SmtpClient(host, port, options)
-    smtp.logLevel = LOG_LEVEL_NONE
     expect(smtp).to.exist
 
     TCPSocket = function () { }

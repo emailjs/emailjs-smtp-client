@@ -4,13 +4,6 @@ import { encode } from 'emailjs-base64'
 import TCPSocket from 'emailjs-tcp-socket'
 import { TextDecoder, TextEncoder } from 'text-encoding'
 import SmtpClientResponseParser from './parser'
-import createDefaultLogger from './logger'
-import {
-  LOG_LEVEL_ERROR,
-  LOG_LEVEL_WARN,
-  LOG_LEVEL_INFO,
-  LOG_LEVEL_DEBUG
-} from './common'
 
 var DEBUG_TAG = 'SMTP Client'
 
@@ -46,6 +39,7 @@ class SmtpClient {
    * @param {Object} [options.auth] Authentication options. Depends on the preferred authentication method. Usually {user, pass}
    * @param {String} [options.authMethod] Force specific authentication method
    * @param {Boolean} [options.disableEscaping] If set to true, do not escape dots on the beginning of the lines
+   * @param {Boolean} [options.logger] A winston-compatible logger
    */
   constructor (host, port, options = {}) {
     this.options = options
@@ -83,8 +77,8 @@ class SmtpClient {
     this._socketTimeoutStart = false // Start time of sending the first packet in data mode
     this._socketTimeoutPeriod = false // Timeout for sending in data mode, gets extended with every send()
 
-    // Activate logging
-    this.createLogger()
+    const dummyLogger = ['error', 'warning', 'info', 'debug'].reduce((o, l) => { o[l] = () => {}; return o }, {})
+    this.logger = options.logger || dummyLogger
 
     // Event placeholders
     this.onerror = (e) => { } // Will be run when an error occurs. The `onclose` event will fire subsequently.
@@ -552,7 +546,7 @@ class SmtpClient {
       }
 
       // Try HELO instead
-      this.logger.warn(DEBUG_TAG, 'EHLO not successful, trying HELO ' + this.options.name)
+      this.logger.warning(DEBUG_TAG, 'EHLO not successful, trying HELO ' + this.options.name)
       this._currentAction = this._actionHELO
       this._sendCommand('HELO ' + this.options.name)
       return
@@ -670,7 +664,7 @@ class SmtpClient {
    */
   _actionAUTH_XOAUTH2 (command) {
     if (!command.success) {
-      this.logger.warn(DEBUG_TAG, 'Error during AUTH XOAUTH2, sending empty response')
+      this.logger.warning(DEBUG_TAG, 'Error during AUTH XOAUTH2, sending empty response')
       this._sendCommand('')
       this._currentAction = this._actionAUTHComplete
     } else {
@@ -745,7 +739,7 @@ class SmtpClient {
    */
   _actionRCPT (command) {
     if (!command.success) {
-      this.logger.warn(DEBUG_TAG, 'RCPT TO failed for: ' + this._envelope.curRecipient)
+      this.logger.warning(DEBUG_TAG, 'RCPT TO failed for: ' + this._envelope.curRecipient)
       // this is a soft error
       this._envelope.rcptFailed.push(this._envelope.curRecipient)
     } else {
@@ -871,17 +865,6 @@ class SmtpClient {
     ]
     // base64("user={User}\x00auth=Bearer {Token}\x00\x00")
     return encode(authData.join('\x01'))
-  }
-
-  createLogger (creator = createDefaultLogger) {
-    const logger = creator((this.options.auth || {}).user || '', this.host)
-    this.logLevel = this.LOG_LEVEL_ALL
-    this.logger = {
-      debug: (...msgs) => { if (LOG_LEVEL_DEBUG >= this.logLevel) { logger.debug(msgs) } },
-      info: (...msgs) => { if (LOG_LEVEL_INFO >= this.logLevel) { logger.info(msgs) } },
-      warn: (...msgs) => { if (LOG_LEVEL_WARN >= this.logLevel) { logger.warn(msgs) } },
-      error: (...msgs) => { if (LOG_LEVEL_ERROR >= this.logLevel) { logger.error(msgs) } }
-    }
   }
 }
 

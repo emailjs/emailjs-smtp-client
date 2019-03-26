@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-expressions */
 
-import SmtpClient, { LOG_LEVEL_NONE } from '..'
+import SmtpClient from './client'
 import { SMTPServer } from 'smtp-server'
 
 describe('smtp-client data', function () {
@@ -26,7 +26,6 @@ describe('smtp-client data', function () {
     smtp = new SmtpClient('127.0.0.1', port, {
       useSecureTransport: false
     })
-    smtp.logLevel = LOG_LEVEL_NONE
     expect(smtp).to.exist
 
     smtp.connect()
@@ -222,7 +221,6 @@ describe('smtp-client authentication', function () {
         pass: 'def'
       }
     })
-    smtp.logLevel = smtp.LOG_LEVEL_NONE
     expect(smtp).to.exist
 
     smtp.connect()
@@ -241,7 +239,6 @@ describe('smtp-client authentication', function () {
       },
       authMethod: 'LOGIN'
     })
-    smtp.logLevel = smtp.LOG_LEVEL_NONE
     expect(smtp).to.exist
 
     smtp.connect()
@@ -260,7 +257,6 @@ describe('smtp-client authentication', function () {
       },
       authMethod: 'LOGIN'
     })
-    smtp.logLevel = smtp.LOG_LEVEL_NONE
     expect(smtp).to.exist
 
     smtp.connect()
@@ -291,7 +287,6 @@ describe('smtp-client STARTTLS encryption', function () {
       useSecureTransport: false,
       ignoreTLS: true
     })
-    smtp.logLevel = smtp.LOG_LEVEL_NONE
     expect(smtp).to.exist
 
     smtp.connect()
@@ -306,7 +301,6 @@ describe('smtp-client STARTTLS encryption', function () {
     let smtp = new SmtpClient('127.0.0.1', port, {
       useSecureTransport: false
     })
-    smtp.logLevel = smtp.LOG_LEVEL_NONE
     expect(smtp).to.exist
 
     smtp.connect()
