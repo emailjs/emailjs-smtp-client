@@ -13,6 +13,7 @@ Create `SmtpClient` object with:
 ```javascript
 import SmtpClient from 'emailjs-smtp-client'
 var client = new SmtpClient(host, port, options)
+client.connect()
 ```
 
 where
