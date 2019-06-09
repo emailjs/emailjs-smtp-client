@@ -39,34 +39,6 @@ describe('smtpclient response parser unit tests', function () {
     })
   })
 
-  describe('#end', function () {
-    it('should emit error on closed parser', function () {
-      sinon.stub(parser, 'onerror')
-
-      parser.destroyed = true
-      parser.end()
-
-      expect(parser.onerror.callCount).to.equal(1)
-      expect(parser.onerror.args[0][0] instanceof Error).to.be.true
-
-      parser.onerror.restore()
-    })
-
-    it('process the remainder and emit onend', function () {
-      sinon.stub(parser, '_processLine')
-      sinon.stub(parser, 'onend')
-
-      parser._remainder = 'abc'
-      parser.end()
-
-      expect(parser._processLine.withArgs('abc').callCount).to.equal(1)
-      expect(parser.onend.callCount).to.equal(1)
-
-      parser._processLine.restore()
-      parser.onend.restore()
-    })
-  })
-
   describe('#_processLine', function () {
     it('should parse and emit a single line response', function () {
       sinon.stub(parser, 'ondata')

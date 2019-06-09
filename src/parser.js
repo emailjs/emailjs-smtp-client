@@ -34,28 +34,6 @@ class SmtpResponseParser {
     }
   }
 
-  /**
-   * Indicate that all the data from the server has been received. Can be called only once.
-   *
-   * @param {String} [chunk] Chunk of data received from the server
-   */
-  end (chunk) {
-    if (this.destroyed) {
-      return this.onerror(new Error('This parser has already been closed, "end" is prohibited'))
-    }
-
-    if (chunk) {
-      this.send(chunk)
-    }
-
-    if (this._remainder) {
-      this._processLine(this._remainder)
-    }
-
-    this.destroyed = true
-    this.onend()
-  }
-
   // Private API
 
   /**
