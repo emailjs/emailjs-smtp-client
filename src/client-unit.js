@@ -68,24 +68,6 @@ describe('smtpclient unit tests', function () {
     })
   })
 
-  describe('#suspend', function () {
-    it('should call suspend', function () {
-      socketStub.readyState = 'open'
-      smtp.suspend()
-
-      expect(socketStub.suspend.callCount).to.equal(1)
-    })
-  })
-
-  describe('#resume', function () {
-    it('should call resume', function () {
-      socketStub.readyState = 'open'
-      smtp.resume()
-
-      expect(socketStub.resume.callCount).to.equal(1)
-    })
-  })
-
   describe('#quit', function () {
     it('should send QUIT', function () {
       let _sendCommandStub = sinon.stub(smtp, '_sendCommand')
@@ -93,43 +75,6 @@ describe('smtpclient unit tests', function () {
       smtp.quit()
 
       expect(_sendCommandStub.withArgs('QUIT').callCount).to.equal(1)
-
-      _sendCommandStub.restore()
-    })
-  })
-
-  describe('#reset', function () {
-    it('should send RSET', function () {
-      let _sendCommandStub = sinon.stub(smtp, '_sendCommand')
-
-      smtp.reset()
-
-      expect(_sendCommandStub.withArgs('RSET').callCount).to.equal(1)
-
-      _sendCommandStub.restore()
-    })
-
-    it('should use default authentication', function () {
-      smtp.options.auth = {
-        user: '1'
-      }
-      smtp.reset()
-
-      expect(smtp.options.auth).to.deep.equal({
-        user: '1'
-      })
-    })
-
-    it('should store custom authentication', function () {
-      let auth = {
-        user: 'test'
-      }
-      smtp.options.auth = {
-        user: '1'
-      }
-      smtp.reset(auth)
-
-      expect(smtp.options.auth).to.deep.equal(auth)
     })
   })
 
@@ -147,8 +92,6 @@ describe('smtpclient unit tests', function () {
       socketStub.readyState = ''
       smtp.close()
       expect(smtp._destroy.callCount).to.equal(1)
-
-      smtp._destroy.restore()
     })
   })
 
@@ -165,8 +108,6 @@ describe('smtpclient unit tests', function () {
       expect(_sendCommandStub.withArgs('MAIL FROM:<ft>').callCount).to.equal(1)
       expect(smtp._envelope.from).to.deep.equal(envelope.from)
       expect(smtp._envelope.to).to.deep.equal(envelope.to)
-
-      _sendCommandStub.restore()
     })
   })
 
@@ -185,8 +126,6 @@ describe('smtpclient unit tests', function () {
       smtp.send('abcde')
 
       expect(_sendStringStub.withArgs('abcde').callCount).to.equal(1)
-
-      _sendStringStub.restore()
     })
   })
 
@@ -208,17 +147,46 @@ describe('smtpclient unit tests', function () {
     })
   })
 
+  describe('#_parse', function () {
+    it('should parse and emit a single line response', function () {
+      sinon.stub(smtp, '_onCommand')
+
+      smtp._parse('250 1.1.1 Ok\r\n')
+      expect(smtp._onCommand.withArgs({
+        statusCode: 250,
+        enhancedStatus: '1.1.1',
+        data: 'Ok',
+        line: '250 1.1.1 Ok',
+        success: true
+      }).callCount).to.equal(1)
+    })
+
+    it('should parse and emit a multi line response', function () {
+      sinon.stub(smtp, '_onCommand')
+
+      smtp._parse('250-Ok 1\r\n')
+      smtp._parse('250-Ok 2\r\n')
+      smtp._parse('250 Ok 3\r\n')
+
+      expect(smtp._onCommand.withArgs({
+        statusCode: 250,
+        enhancedStatus: null,
+        data: 'Ok 1\nOk 2\nOk 3',
+        line: '250-Ok 1\n250-Ok 2\n250 Ok 3',
+        success: true
+      }).callCount).to.equal(1)
+    })
+  })
+
   describe('#_onData', function () {
     it('should decode and send chunk to parser', function () {
-      let _parserSendStub = sinon.stub(smtp._parser, 'send')
+      sinon.stub(smtp, '_parse')
 
       smtp._onData({
         data: new Uint8Array([97, 98, 99]).buffer // abc
       })
 
-      expect(_parserSendStub.withArgs('abc').callCount).to.equal(1)
-
-      _parserSendStub.restore()
+      expect(smtp._parse.withArgs('abc').callCount).to.equal(1)
     })
   })
 
@@ -229,8 +197,6 @@ describe('smtpclient unit tests', function () {
       smtp._onDrain()
 
       expect(_ondrainStub.callCount).to.equal(1)
-
-      _ondrainStub.restore()
     })
   })
 
@@ -246,9 +212,6 @@ describe('smtpclient unit tests', function () {
 
       expect(_onerrorStub.withArgs(err).callCount).to.equal(1)
       expect(_closeStub.callCount).to.equal(1)
-
-      _onerrorStub.restore()
-      _closeStub.restore()
     })
   })
 
@@ -259,8 +222,6 @@ describe('smtpclient unit tests', function () {
       smtp._onClose()
 
       expect(_destroyStub.callCount).to.equal(1)
-
-      _destroyStub.restore()
     })
   })
 
@@ -284,8 +245,6 @@ describe('smtpclient unit tests', function () {
       smtp._destroy()
 
       expect(_oncloseStub.callCount).to.equal(0)
-
-      _oncloseStub.restore()
     })
 
     it('should emit onclose if not destroyed yet', function () {
@@ -295,8 +254,6 @@ describe('smtpclient unit tests', function () {
       smtp._destroy()
 
       expect(_oncloseStub.callCount).to.equal(1)
-
-      _oncloseStub.restore()
     })
   })
 
@@ -318,8 +275,6 @@ describe('smtpclient unit tests', function () {
 
       expect(_onidleStub.callCount).to.equal(1)
       expect(smtp._currentAction).to.equal(smtp._actionIdle)
-
-      _onidleStub.restore()
     })
 
     it('should use AUTH PLAIN by default', function () {
@@ -334,8 +289,6 @@ describe('smtpclient unit tests', function () {
 
       expect(_sendCommandStub.withArgs('AUTH PLAIN AGFiYwBkZWY=').callCount).to.equal(1)
       expect(smtp._currentAction).to.equal(smtp._actionAUTHComplete)
-
-      _sendCommandStub.restore()
     })
 
     it('should use AUTH LOGIN if specified', function () {
@@ -351,8 +304,6 @@ describe('smtpclient unit tests', function () {
 
       expect(_sendCommandStub.withArgs('AUTH LOGIN').callCount).to.equal(1)
       expect(smtp._currentAction).to.equal(smtp._actionAUTH_LOGIN_USER)
-
-      _sendCommandStub.restore()
     })
 
     it('should use AUTH XOAUTH2 if specified', function () {
@@ -367,8 +318,6 @@ describe('smtpclient unit tests', function () {
 
       expect(_sendCommandStub.withArgs('AUTH XOAUTH2 dXNlcj1hYmMBYXV0aD1CZWFyZXIgZGVmAQE=').callCount).to.equal(1)
       expect(smtp._currentAction).to.equal(smtp._actionAUTH_XOAUTH2)
-
-      _sendCommandStub.restore()
     })
   })
 
@@ -383,7 +332,6 @@ describe('smtpclient unit tests', function () {
 
       expect(_onErrorStub.calledOnce).to.be.true
       expect(_onErrorStub.args[0][0].message).to.deep.equal('Invalid greeting: test')
-      _onErrorStub.restore()
     })
 
     it('should send EHLO on greeting', function () {
@@ -397,8 +345,6 @@ describe('smtpclient unit tests', function () {
 
       expect(_sendCommandStub.withArgs('EHLO abc').callCount).to.equal(1)
       expect(smtp._currentAction).to.equal(smtp._actionEHLO)
-
-      _sendCommandStub.restore()
     })
 
     it('should send LHLO on greeting', function () {
@@ -413,8 +359,6 @@ describe('smtpclient unit tests', function () {
 
       expect(_sendCommandStub.withArgs('LHLO abc').callCount).to.equal(1)
       expect(smtp._currentAction).to.equal(smtp._actionLHLO)
-
-      _sendCommandStub.restore()
     })
   })
 
@@ -429,8 +373,6 @@ describe('smtpclient unit tests', function () {
       })
 
       expect(_actionEHLOStub.callCount).to.equal(1)
-
-      _actionEHLOStub.restore()
     })
   })
 
@@ -445,8 +387,6 @@ describe('smtpclient unit tests', function () {
 
       expect(_sendCommandStub.withArgs('HELO abc').callCount).to.equal(1)
       expect(smtp._currentAction).to.equal(smtp._actionHELO)
-
-      _sendCommandStub.restore()
     })
 
     it('should proceed to authentication', function () {
@@ -459,8 +399,6 @@ describe('smtpclient unit tests', function () {
 
       expect(_authenticateUserStub.callCount).to.equal(1)
       expect(smtp._supportedAuth).to.deep.equal(['PLAIN', 'LOGIN'])
-
-      _authenticateUserStub.restore()
     })
 
     it('should proceed to starttls', function () {
@@ -475,7 +413,6 @@ describe('smtpclient unit tests', function () {
       expect(_sendCommandStub.withArgs('STARTTLS').callCount).to.equal(1)
 
       expect(smtp._currentAction).to.equal(smtp._actionSTARTTLS)
-      _sendCommandStub.restore()
     })
   })
 
@@ -488,8 +425,6 @@ describe('smtpclient unit tests', function () {
       })
 
       expect(_authenticateUserStub.callCount).to.equal(1)
-
-      _authenticateUserStub.restore()
     })
   })
 
@@ -506,8 +441,6 @@ describe('smtpclient unit tests', function () {
       expect(smtp.socket.upgradeToSecure.callCount).to.equal(1)
       expect(_sendCommandStub.withArgs('EHLO abc').callCount).to.equal(1)
       expect(smtp._currentAction).to.equal(smtp._actionEHLO)
-
-      _sendCommandStub.restore()
     })
   })
 
@@ -522,8 +455,6 @@ describe('smtpclient unit tests', function () {
 
       expect(_onErrorStub.callCount).to.equal(1)
       expect(_onErrorStub.args[0][0] instanceof Error).to.be.true
-
-      _onErrorStub.restore()
     })
 
     it('should respond to server with base64 encoded username', function () {
@@ -540,8 +471,6 @@ describe('smtpclient unit tests', function () {
 
       expect(_sendCommandStub.withArgs('YWJj').callCount).to.equal(1)
       expect(smtp._currentAction).to.equal(smtp._actionAUTH_LOGIN_PASS)
-
-      _sendCommandStub.restore()
     })
   })
 
@@ -556,8 +485,6 @@ describe('smtpclient unit tests', function () {
 
       expect(_onErrorStub.callCount).to.equal(1)
       expect(_onErrorStub.args[0][0] instanceof Error).to.be.true
-
-      _onErrorStub.restore()
     })
 
     it('should respond to server with base64 encoded password', function () {
@@ -574,8 +501,6 @@ describe('smtpclient unit tests', function () {
 
       expect(_sendCommandStub.withArgs('ZGVm').callCount).to.equal(1)
       expect(smtp._currentAction).to.equal(smtp._actionAUTHComplete)
-
-      _sendCommandStub.restore()
     })
   })
 
@@ -589,8 +514,6 @@ describe('smtpclient unit tests', function () {
 
       expect(_sendCommandStub.withArgs('').callCount).to.equal(1)
       expect(smtp._currentAction).to.equal(smtp._actionAUTHComplete)
-
-      _sendCommandStub.restore()
     })
 
     it('should run _actionAUTHComplete on success', function () {
@@ -602,8 +525,6 @@ describe('smtpclient unit tests', function () {
       smtp._actionAUTH_XOAUTH2(cmd)
 
       expect(_actionAUTHCompleteStub.withArgs(cmd).callCount).to.equal(1)
-
-      _actionAUTHCompleteStub.restore()
     })
   })
 
@@ -618,8 +539,6 @@ describe('smtpclient unit tests', function () {
 
       expect(_onErrorStub.callCount).to.equal(1)
       expect(_onErrorStub.args[0][0] instanceof Error).to.be.true
-
-      _onErrorStub.restore()
     })
 
     it('should emit idle if auth succeeded', function () {
@@ -636,8 +555,6 @@ describe('smtpclient unit tests', function () {
       expect(_onidleStub.callCount).to.equal(1)
       expect(smtp._currentAction).to.equal(smtp._actionIdle)
       expect(smtp._authenticatedAs).to.equal('abc')
-
-      _onidleStub.restore()
     })
   })
 
@@ -652,8 +569,6 @@ describe('smtpclient unit tests', function () {
 
       expect(_onErrorStub.calledOnce).to.be.true
       expect(_onErrorStub.args[0][0].message).to.equal('err')
-
-      _onErrorStub.restore()
     })
 
     it('should emit error on empty recipient queue', function () {
@@ -668,8 +583,6 @@ describe('smtpclient unit tests', function () {
 
       expect(_onErrorStub.callCount).to.equal(1)
       expect(_onErrorStub.args[0][0] instanceof Error).to.be.true
-
-      _onErrorStub.restore()
     })
 
     it('should send to the next recipient in queue', function () {
@@ -684,8 +597,6 @@ describe('smtpclient unit tests', function () {
 
       expect(_sendCommandStub.withArgs('RCPT TO:<receiver>').callCount).to.equal(1)
       expect(smtp._currentAction).to.equal(smtp._actionRCPT)
-
-      _sendCommandStub.restore()
     })
   })
 
@@ -705,8 +616,6 @@ describe('smtpclient unit tests', function () {
 
       expect(_sendCommandStub.withArgs('DATA').callCount).to.equal(1)
       expect(smtp._currentAction).to.equal(smtp._actionDATA)
-
-      _sendCommandStub.restore()
     })
 
     it('should send rerun RCPT if queue is not empty', function () {
@@ -722,8 +631,6 @@ describe('smtpclient unit tests', function () {
 
       expect(_sendCommandStub.withArgs('RCPT TO:<receiver>').callCount).to.equal(1)
       expect(smtp._currentAction).to.equal(smtp._actionRCPT)
-
-      _sendCommandStub.restore()
     })
 
     it('should emit error if all recipients failed', function () {
@@ -741,37 +648,6 @@ describe('smtpclient unit tests', function () {
 
       expect(_onErrorStub.callCount).to.equal(1)
       expect(_onErrorStub.args[0][0] instanceof Error).to.be.true
-
-      _onErrorStub.restore()
-    })
-  })
-
-  describe('#_actionRSET', function () {
-    it('should emit error on invalid input', function () {
-      let _onErrorStub = sinon.stub(smtp, '_onError')
-
-      smtp._actionRSET({
-        success: false,
-        data: 'err'
-      })
-
-      expect(_onErrorStub.calledOnce).to.be.true
-      expect(_onErrorStub.args[0][0].message).to.equal('err')
-
-      _onErrorStub.restore()
-    })
-
-    it('should proceed to authentication', function () {
-      let _authenticateUserStub = sinon.stub(smtp, '_authenticateUser')
-
-      smtp._actionRSET({
-        success: true
-      })
-
-      expect(_authenticateUserStub.callCount).to.equal(1)
-      expect(smtp._authenticatedAs).to.be.null
-
-      _authenticateUserStub.restore()
     })
   })
 
@@ -786,8 +662,6 @@ describe('smtpclient unit tests', function () {
 
       expect(_onErrorStub.calledOnce).to.be.true
       expect(_onErrorStub.args[0][0].message).to.equal('err')
-
-      _onErrorStub.restore()
     })
 
     it('should emit onready on success', function () {
@@ -805,8 +679,6 @@ describe('smtpclient unit tests', function () {
       expect(_onreadyStub.withArgs(['abc']).callCount).to.equal(1)
       expect(smtp._currentAction).to.equal(smtp._actionIdle)
       expect(smtp._dataMode).to.be.true
-
-      _onreadyStub.restore()
     })
   })
 
@@ -819,8 +691,6 @@ describe('smtpclient unit tests', function () {
       })
 
       expect(_ondoneStub.withArgs(false).callCount).to.equal(1)
-
-      _ondoneStub.restore()
     })
 
     it('should emit ondone with argument true', function () {
@@ -831,8 +701,6 @@ describe('smtpclient unit tests', function () {
       })
 
       expect(_ondoneStub.withArgs(true).callCount).to.equal(1)
-
-      _ondoneStub.restore()
     })
 
     it('should emit onidle if required', function () {
@@ -844,8 +712,6 @@ describe('smtpclient unit tests', function () {
       })
 
       expect(_onidleStub.callCount).to.equal(1)
-
-      _onidleStub.restore()
     })
 
     it('should cancel onidle', function () {
@@ -860,8 +726,6 @@ describe('smtpclient unit tests', function () {
       })
 
       expect(_onidleStub.callCount).to.equal(0)
-
-      _onidleStub.restore()
     })
 
     describe('LMTP responses', function () {
@@ -880,8 +744,6 @@ describe('smtpclient unit tests', function () {
 
         expect(_ondoneStub.withArgs(true).callCount).to.equal(1)
         expect(smtp._envelope.rcptFailed).to.deep.equal(['abc'])
-
-        _ondoneStub.restore()
       })
 
       it('should wait for additional responses', function () {
@@ -907,8 +769,6 @@ describe('smtpclient unit tests', function () {
 
         expect(_ondoneStub.withArgs(true).callCount).to.equal(1)
         expect(smtp._envelope.rcptFailed).to.deep.equal(['abc', 'ghi'])
-
-        _ondoneStub.restore()
       })
     })
   })

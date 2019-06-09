@@ -3,7 +3,6 @@
 import { encode } from 'emailjs-base64'
 import TCPSocket from 'emailjs-tcp-socket'
 import { TextDecoder, TextEncoder } from 'text-encoding'
-import SmtpClientResponseParser from './parser'
 
 var DEBUG_TAG = 'SMTP Client'
 
@@ -65,7 +64,6 @@ class SmtpClient {
 
     // Private properties
 
-    this._parser = new SmtpClientResponseParser() // SMTP response parser object. All data coming from the downstream server is feeded to this parser
     this._authenticatedAs = null // If authenticated successfully, stores the username
     this._supportedAuth = [] // A list of authentication mechanisms detected from the EHLO response and which are compatible with this library
     this._dataMode = false // If true, accepts data from the upstream to be passed directly to the downstream socket. Used after the DATA command
@@ -76,6 +74,9 @@ class SmtpClient {
     this._socketTimeoutTimer = false // Timer waiting to declare the socket dead starting from the last write
     this._socketTimeoutStart = false // Start time of sending the first packet in data mode
     this._socketTimeoutPeriod = false // Timeout for sending in data mode, gets extended with every send()
+
+    this._parseBlock = { data: [], lines: [], statusCode: null } // If the response is a list, contains previous not yet emitted lines
+    this._parseRemainder = '' // If the complete line is not received yet, contains the beginning of it
 
     const dummyLogger = ['error', 'warning', 'info', 'debug'].reduce((o, l) => { o[l] = () => {}; return o }, {})
     this.logger = options.logger || dummyLogger
@@ -111,43 +112,12 @@ class SmtpClient {
   }
 
   /**
-   * Pauses `data` events from the downstream SMTP server
-   */
-  suspend () {
-    if (this.socket && this.socket.readyState === 'open') {
-      this.socket.suspend()
-    }
-  }
-
-  /**
-   * Resumes `data` events from the downstream SMTP server. Be careful of not
-   * resuming something that is not suspended - an error is thrown in this case
-   */
-  resume () {
-    if (this.socket && this.socket.readyState === 'open') {
-      this.socket.resume()
-    }
-  }
-
-  /**
    * Sends QUIT
    */
   quit () {
     this.logger.debug(DEBUG_TAG, 'Sending QUIT...')
     this._sendCommand('QUIT')
     this._currentAction = this.close
-  }
-
-  /**
-   * Reset authentication
-   *
-   * @param {Object} [auth] Use this if you want to authenticate as another user
-   */
-  reset (auth) {
-    this.options.auth = auth || this.options.auth
-    this.logger.debug(DEBUG_TAG, 'Sending RSET...')
-    this._sendCommand('RSET')
-    this._currentAction = this._actionRSET
   }
 
   /**
@@ -247,6 +217,73 @@ class SmtpClient {
 
   // PRIVATE METHODS
 
+  /**
+   * Queue some data from the server for parsing.
+   *
+   * @param {String} chunk Chunk of data received from the server
+   */
+  _parse (chunk) {
+    // Lines should always end with <CR><LF> but you never know, might be only <LF> as well
+    var lines = (this._parseRemainder + (chunk || '')).split(/\r?\n/)
+    this._parseRemainder = lines.pop() // not sure if the line has completely arrived yet
+
+    for (var i = 0, len = lines.length; i < len; i++) {
+      if (!lines[i].trim()) {
+        // nothing to check, empty line
+        continue
+      }
+
+      this._parseBlock.lines.push(lines[i])
+
+      // possible input strings for the regex:
+      // 250-MESSAGE
+      // 250 MESSAGE
+      // 250 1.2.3 MESSAGE
+
+      const match = lines[i].match(/^(\d{3})([- ])(?:(\d+\.\d+\.\d+)(?: ))?(.*)/)
+      if (match) {
+        this._parseBlock.data.push(match[4])
+
+        if (match[2] === '-') {
+          if (this._parseBlock.statusCode && this._parseBlock.statusCode !== Number(match[1])) {
+            // dead code
+          } else if (!this._parseBlock.statusCode) {
+            this._parseBlock.statusCode = Number(match[1])
+          }
+        } else {
+          const response = {
+            statusCode: Number(match[1]) || 0,
+            enhancedStatus: match[3] || null,
+            data: this._parseBlock.data.join('\n'),
+            line: this._parseBlock.lines.join('\n')
+          }
+          response.success = response.statusCode >= 200 && response.statusCode < 300
+
+          this._onCommand(response)
+          this._parseBlock = {
+            data: [],
+            lines: [],
+            statusCode: null
+          }
+          this._parseBlock.statusCode = null
+        }
+      } else {
+        this._onCommand({
+          success: false,
+          statusCode: this._parseBlock.statusCode || null,
+          enhancedStatus: null,
+          data: [lines[i]].join('\n'),
+          line: this._parseBlock.lines.join('\n')
+        })
+        this._parseBlock = {
+          data: [],
+          lines: [],
+          statusCode: null
+        }
+      }
+    }
+  }
+
   // EVENT HANDLERS FOR THE SOCKET
 
   /**
@@ -266,8 +303,6 @@ class SmtpClient {
     this.socket.onclose = this._onClose.bind(this)
     this.socket.ondrain = this._onDrain.bind(this)
 
-    this._parser.ondata = this._onCommand.bind(this)
-
     this._currentAction = this._actionGreeting
   }
 
@@ -281,7 +316,7 @@ class SmtpClient {
     clearTimeout(this._socketTimeoutTimer)
     var stringPayload = new TextDecoder('UTF-8').decode(new Uint8Array(evt.data))
     this.logger.debug(DEBUG_TAG, 'SERVER: ' + stringPayload)
-    this._parser.send(stringPayload)
+    this._parse(stringPayload)
   }
 
   /**
@@ -761,23 +796,6 @@ class SmtpClient {
       this._currentAction = this._actionRCPT
       this._sendCommand('RCPT TO:<' + this._envelope.curRecipient + '>')
     }
-  }
-
-  /**
-   * Response to the RSET command. If successful, clear the current authentication
-   * information and reauthenticate.
-   *
-   * @param {Object} command Parsed command from the server {statusCode, data, line}
-   */
-  _actionRSET (command) {
-    if (!command.success) {
-      this.logger.error(DEBUG_TAG, 'RSET unsuccessful ' + command.data)
-      this._onError(new Error(command.data))
-      return
-    }
-
-    this._authenticatedAs = null
-    this._authenticateUser()
   }
 
   /**
