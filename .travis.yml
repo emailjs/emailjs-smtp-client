@@ -12,7 +12,7 @@ deploy:
   provider: npm
   email: felix.hammerl+emailjs-deployment-user@gmail.com
   api_key:
-    secure: lJb7KLkxChSSsGkaD9w9dwTGrR7a6oVbp6MUqVGyEWjoP1f3a3AG1gSjtGiywwDSOEmwGl5TwxOSQF475RMQzasB4eK8xgZggVeHEjBOu+wWTQaH6MSXJmM39kFkXYsFM6LK6FHVbcKAF+o7Tx2X6HF61PIz02bhvp836HTniWw=
+    secure: C1fcOxsLlOlLjOFyh4iEWAPptmMCxNgeFQzp3a8gjl9W11m9d/vPQDd0vQrCYv0AqVezTtex3/VcVitpBlCyLxlq+p2W2G7kQ+aZ6EZQe0IYrtvcE/QqT4tSFo4um2PJmUb2/jOL2/09sgIK1S6PQfi2rTpt48rymvhlAGg++ro=
   on:
     tags: true
     all_branches: true
