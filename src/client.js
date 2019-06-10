@@ -75,7 +75,7 @@ class SmtpClient {
     this._socketTimeoutStart = false // Start time of sending the first packet in data mode
     this._socketTimeoutPeriod = false // Timeout for sending in data mode, gets extended with every send()
 
-    this._parseBlock = { data: [], lines: [], statusCode: null } // If the response is a list, contains previous not yet emitted lines
+    this._parseBlock = { data: [], statusCode: null }
     this._parseRemainder = '' // If the complete line is not received yet, contains the beginning of it
 
     const dummyLogger = ['error', 'warning', 'info', 'debug'].reduce((o, l) => { o[l] = () => {}; return o }, {})
@@ -227,57 +227,47 @@ class SmtpClient {
     var lines = (this._parseRemainder + (chunk || '')).split(/\r?\n/)
     this._parseRemainder = lines.pop() // not sure if the line has completely arrived yet
 
-    for (var i = 0, len = lines.length; i < len; i++) {
+    for (let i = 0, len = lines.length; i < len; i++) {
       if (!lines[i].trim()) {
         // nothing to check, empty line
         continue
       }
 
-      this._parseBlock.lines.push(lines[i])
-
       // possible input strings for the regex:
-      // 250-MESSAGE
-      // 250 MESSAGE
+      // 250-MULTILINE REPLY
+      // 250 LAST LINE OF REPLY
       // 250 1.2.3 MESSAGE
 
       const match = lines[i].match(/^(\d{3})([- ])(?:(\d+\.\d+\.\d+)(?: ))?(.*)/)
+
       if (match) {
         this._parseBlock.data.push(match[4])
 
         if (match[2] === '-') {
-          if (this._parseBlock.statusCode && this._parseBlock.statusCode !== Number(match[1])) {
-            // dead code
-          } else if (!this._parseBlock.statusCode) {
-            this._parseBlock.statusCode = Number(match[1])
-          }
+          // this is a multiline reply
+          this._parseBlock.statusCode = this._parseBlock.statusCode || Number(match[1])
         } else {
+          const statusCode = Number(match[1]) || 0
           const response = {
-            statusCode: Number(match[1]) || 0,
-            enhancedStatus: match[3] || null,
+            statusCode,
             data: this._parseBlock.data.join('\n'),
-            line: this._parseBlock.lines.join('\n')
+            success: statusCode >= 200 && statusCode < 300
           }
-          response.success = response.statusCode >= 200 && response.statusCode < 300
 
           this._onCommand(response)
           this._parseBlock = {
             data: [],
-            lines: [],
             statusCode: null
           }
-          this._parseBlock.statusCode = null
         }
       } else {
         this._onCommand({
           success: false,
           statusCode: this._parseBlock.statusCode || null,
-          enhancedStatus: null,
-          data: [lines[i]].join('\n'),
-          line: this._parseBlock.lines.join('\n')
+          data: [lines[i]].join('\n')
         })
         this._parseBlock = {
           data: [],
-          lines: [],
           statusCode: null
         }
       }
@@ -527,7 +517,7 @@ class SmtpClient {
   /**
    * Initial response from the server, must have a status 220
    *
-   * @param {Object} command Parsed command from the server {statusCode, data, line}
+   * @param {Object} command Parsed command from the server {statusCode, data}
    */
   _actionGreeting (command) {
     if (command.statusCode !== 220) {
@@ -551,7 +541,7 @@ class SmtpClient {
   /**
    * Response to LHLO
    *
-   * @param {Object} command Parsed command from the server {statusCode, data, line}
+   * @param {Object} command Parsed command from the server {statusCode, data}
    */
   _actionLHLO (command) {
     if (!command.success) {
@@ -567,7 +557,7 @@ class SmtpClient {
   /**
    * Response to EHLO. If the response is an error, try HELO instead
    *
-   * @param {Object} command Parsed command from the server {statusCode, data, line}
+   * @param {Object} command Parsed command from the server {statusCode, data}
    */
   _actionEHLO (command) {
     var match
@@ -588,32 +578,32 @@ class SmtpClient {
     }
 
     // Detect if the server supports PLAIN auth
-    if (command.line.match(/AUTH(?:\s+[^\n]*\s+|\s+)PLAIN/i)) {
+    if (command.data.match(/AUTH(?:\s+[^\n]*\s+|\s+)PLAIN/i)) {
       this.logger.debug(DEBUG_TAG, 'Server supports AUTH PLAIN')
       this._supportedAuth.push('PLAIN')
     }
 
     // Detect if the server supports LOGIN auth
-    if (command.line.match(/AUTH(?:\s+[^\n]*\s+|\s+)LOGIN/i)) {
+    if (command.data.match(/AUTH(?:\s+[^\n]*\s+|\s+)LOGIN/i)) {
       this.logger.debug(DEBUG_TAG, 'Server supports AUTH LOGIN')
       this._supportedAuth.push('LOGIN')
     }
 
     // Detect if the server supports XOAUTH2 auth
-    if (command.line.match(/AUTH(?:\s+[^\n]*\s+|\s+)XOAUTH2/i)) {
+    if (command.data.match(/AUTH(?:\s+[^\n]*\s+|\s+)XOAUTH2/i)) {
       this.logger.debug(DEBUG_TAG, 'Server supports AUTH XOAUTH2')
       this._supportedAuth.push('XOAUTH2')
     }
 
     // Detect maximum allowed message size
-    if ((match = command.line.match(/SIZE (\d+)/i)) && Number(match[1])) {
+    if ((match = command.data.match(/SIZE (\d+)/i)) && Number(match[1])) {
       const maxAllowedSize = Number(match[1])
       this.logger.debug(DEBUG_TAG, 'Maximum allowd message size: ' + maxAllowedSize)
     }
 
     // Detect if the server supports STARTTLS
     if (!this._secureMode) {
-      if ((command.line.match(/[ -]STARTTLS\s?$/mi) && !this.options.ignoreTLS) || !!this.options.requireTLS) {
+      if ((command.data.match(/STARTTLS\s?$/mi) && !this.options.ignoreTLS) || !!this.options.requireTLS) {
         this._currentAction = this._actionSTARTTLS
         this.logger.debug(DEBUG_TAG, 'Sending STARTTLS')
         this._sendCommand('STARTTLS')
@@ -649,7 +639,7 @@ class SmtpClient {
   /**
    * Response to HELO
    *
-   * @param {Object} command Parsed command from the server {statusCode, data, line}
+   * @param {Object} command Parsed command from the server {statusCode, data}
    */
   _actionHELO (command) {
     if (!command.success) {
@@ -663,7 +653,7 @@ class SmtpClient {
   /**
    * Response to AUTH LOGIN, if successful expects base64 encoded username
    *
-   * @param {Object} command Parsed command from the server {statusCode, data, line}
+   * @param {Object} command Parsed command from the server {statusCode, data}
    */
   _actionAUTH_LOGIN_USER (command) {
     if (command.statusCode !== 334 || command.data !== 'VXNlcm5hbWU6') {
@@ -679,7 +669,7 @@ class SmtpClient {
   /**
    * Response to AUTH LOGIN username, if successful expects base64 encoded password
    *
-   * @param {Object} command Parsed command from the server {statusCode, data, line}
+   * @param {Object} command Parsed command from the server {statusCode, data}
    */
   _actionAUTH_LOGIN_PASS (command) {
     if (command.statusCode !== 334 || command.data !== 'UGFzc3dvcmQ6') {
@@ -695,7 +685,7 @@ class SmtpClient {
   /**
    * Response to AUTH XOAUTH2 token, if error occurs send empty response
    *
-   * @param {Object} command Parsed command from the server {statusCode, data, line}
+   * @param {Object} command Parsed command from the server {statusCode, data}
    */
   _actionAUTH_XOAUTH2 (command) {
     if (!command.success) {
@@ -711,7 +701,7 @@ class SmtpClient {
    * Checks if authentication succeeded or not. If successfully authenticated
    * emit `idle` to indicate that an e-mail can be sent using this connection
    *
-   * @param {Object} command Parsed command from the server {statusCode, data, line}
+   * @param {Object} command Parsed command from the server {statusCode, data}
    */
   _actionAUTHComplete (command) {
     if (!command.success) {
@@ -731,11 +721,11 @@ class SmtpClient {
   /**
    * Used when the connection is idle and the server emits timeout
    *
-   * @param {Object} command Parsed command from the server {statusCode, data, line}
+   * @param {Object} command Parsed command from the server {statusCode, data}
    */
   _actionIdle (command) {
     if (command.statusCode > 300) {
-      this._onError(new Error(command.line))
+      this._onError(new Error(command.data))
       return
     }
 
@@ -745,7 +735,7 @@ class SmtpClient {
   /**
    * Response to MAIL FROM command. Proceed to defining RCPT TO list if successful
    *
-   * @param {Object} command Parsed command from the server {statusCode, data, line}
+   * @param {Object} command Parsed command from the server {statusCode, data}
    */
   _actionMAIL (command) {
     if (!command.success) {
@@ -770,7 +760,7 @@ class SmtpClient {
    * as this might be related only to the current recipient, not a global error, so
    * the following recipients might still be valid
    *
-   * @param {Object} command Parsed command from the server {statusCode, data, line}
+   * @param {Object} command Parsed command from the server {statusCode, data}
    */
   _actionRCPT (command) {
     if (!command.success) {
@@ -801,7 +791,7 @@ class SmtpClient {
   /**
    * Response to the DATA command. Server is now waiting for a message, so emit `onready`
    *
-   * @param {Object} command Parsed command from the server {statusCode, data, line}
+   * @param {Object} command Parsed command from the server {statusCode, data}
    */
   _actionDATA (command) {
     // response should be 354 but according to this issue https://github.com/eleith/emailjs/issues/24
@@ -821,7 +811,7 @@ class SmtpClient {
    * Response from the server, once the message stream has ended with <CR><LF>.<CR><LF>
    * Emits `ondone`.
    *
-   * @param {Object} command Parsed command from the server {statusCode, data, line}
+   * @param {Object} command Parsed command from the server {statusCode, data}
    */
   _actionStream (command) {
     var rcpt

@@ -154,9 +154,7 @@ describe('smtpclient unit tests', function () {
       smtp._parse('250 1.1.1 Ok\r\n')
       expect(smtp._onCommand.withArgs({
         statusCode: 250,
-        enhancedStatus: '1.1.1',
         data: 'Ok',
-        line: '250 1.1.1 Ok',
         success: true
       }).callCount).to.equal(1)
     })
@@ -170,9 +168,7 @@ describe('smtpclient unit tests', function () {
 
       expect(smtp._onCommand.withArgs({
         statusCode: 250,
-        enhancedStatus: null,
         data: 'Ok 1\nOk 2\nOk 3',
-        line: '250-Ok 1\n250-Ok 2\n250 Ok 3',
         success: true
       }).callCount).to.equal(1)
     })
@@ -369,7 +365,7 @@ describe('smtpclient unit tests', function () {
       smtp.options.name = 'abc'
       smtp._actionLHLO({
         success: true,
-        line: '250-AUTH PLAIN LOGIN'
+        data: 'AUTH PLAIN LOGIN'
       })
 
       expect(_actionEHLOStub.callCount).to.equal(1)
@@ -394,7 +390,7 @@ describe('smtpclient unit tests', function () {
 
       smtp._actionEHLO({
         success: true,
-        line: '250-AUTH PLAIN LOGIN'
+        data: 'AUTH PLAIN LOGIN'
       })
 
       expect(_authenticateUserStub.callCount).to.equal(1)
@@ -407,7 +403,7 @@ describe('smtpclient unit tests', function () {
       smtp._secureMode = false
       smtp._actionEHLO({
         success: true,
-        line: '250-STARTTLS'
+        data: 'STARTTLS'
       })
 
       expect(_sendCommandStub.withArgs('STARTTLS').callCount).to.equal(1)
@@ -435,7 +431,7 @@ describe('smtpclient unit tests', function () {
       smtp.options.name = 'abc'
       smtp._actionSTARTTLS({
         success: true,
-        line: '220 Ready to start TLS'
+        data: 'Ready to start TLS'
       })
 
       expect(smtp.socket.upgradeToSecure.callCount).to.equal(1)
