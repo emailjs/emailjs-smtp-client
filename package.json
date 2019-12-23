@@ -34,7 +34,7 @@
     "chai": "^4.2.0",
     "mocha": "^6.1.4",
     "pre-commit": "^1.2.2",
-    "sinon": "^7.3.2",
+    "sinon": "^8.0.1",
     "smtp-server": "^3.5.0",
     "standard": "^12.0.1"
   },
