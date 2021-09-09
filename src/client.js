@@ -70,6 +70,7 @@ class SmtpClient {
     this._lastDataBytes = '' // Keep track of the last bytes to see how the terminating dot should be placed
     this._envelope = null // Envelope object for tracking who is sending mail to whom
     this._currentAction = null // Stores the function that should be run after a response has been received from the server
+    this._maxAllowedSize = 0 // Stores the max message size supported by the server as reported in the greeting
     this._secureMode = !!this.options.useSecureTransport // Indicates if the connection is secured or plaintext
     this._socketTimeoutTimer = false // Timer waiting to declare the socket dead starting from the last write
     this._socketTimeoutStart = false // Start time of sending the first packet in data mode
@@ -598,7 +599,8 @@ class SmtpClient {
     // Detect maximum allowed message size
     if ((match = command.data.match(/SIZE (\d+)/i)) && Number(match[1])) {
       const maxAllowedSize = Number(match[1])
-      this.logger.debug(DEBUG_TAG, 'Maximum allowd message size: ' + maxAllowedSize)
+      this._maxAllowedSize = maxAllowedSize
+      this.logger.debug(DEBUG_TAG, 'Maximum allowed message size: ' + maxAllowedSize)
     }
 
     // Detect if the server supports STARTTLS
