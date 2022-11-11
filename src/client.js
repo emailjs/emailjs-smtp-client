@@ -61,6 +61,7 @@ class SmtpClient {
     this.socket = false // Downstream TCP socket to the SMTP server, created with mozTCPSocket
     this.destroyed = false // Indicates if the connection has been closed and can't be used anymore
     this.waitDrain = false // Keeps track if the downstream socket is currently full and a drain event should be waited for or not
+    this.maxAllowedSize = 0 // Stores the max message size supported by the server as reported in the greeting
 
     // Private properties
 
@@ -597,8 +598,8 @@ class SmtpClient {
 
     // Detect maximum allowed message size
     if ((match = command.data.match(/SIZE (\d+)/i)) && Number(match[1])) {
-      const maxAllowedSize = Number(match[1])
-      this.logger.debug(DEBUG_TAG, 'Maximum allowd message size: ' + maxAllowedSize)
+      this.maxAllowedSize = Number(match[1])
+      this.logger.debug(DEBUG_TAG, 'Maximum allowed message size: ' + this.maxAllowedSize)
     }
 
     // Detect if the server supports STARTTLS
